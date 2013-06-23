@@ -25,7 +25,7 @@ var ServerNetworkEvents = {
 
 	_onPlayerEntity: function (data, clientId) {
 		if (!ige.server.players[clientId]) {
-			ige.server.players[clientId] = new CharacterContainer(clientId)
+			ige.server.players[clientId] = new Huntress(clientId)
 				// .addComponent(PlayerComponent)
 				.streamMode(1)
 				.mount(ige.server.objectLayer);
@@ -34,6 +34,14 @@ var ServerNetworkEvents = {
 			ige.network.send('playerEntity', ige.server.players[clientId].id(), clientId);
 		}
 	},
+
+	_onPlayerStopMove: function (data, clientId) {
+        var playerEntity = ige.server.players[clientId];
+
+        playerEntity
+            .path.clear()
+            .path.stop();
+    },
 
 	_onPlayerControlToTile: function (data, clientId) {
 		var playerEntity = ige.server.players[clientId],
@@ -69,7 +77,6 @@ var ServerNetworkEvents = {
             .path.clear()
             .path.add(newPath)
             .path.start();
-
 	}
 };
 

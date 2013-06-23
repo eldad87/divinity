@@ -2,7 +2,7 @@
 var Character = IgeEntityBox2d.extend({
 	classId: 'Character',
 
-	init: function () {
+	init: function (animationType) {
 		var self = this;
         IgeEntityBox2d.prototype.init.call(this);
 
@@ -12,15 +12,15 @@ var Character = IgeEntityBox2d.extend({
 			.depth(1);
 
 		// Load the character texture file
-		this._characterTexture = new IgeCellSheet('assets/textures/sprites/vx_chara02_c.png', 12, 8);
+        this._characterTexture = new IgeCellSheet('assets/textures/sprites/vx_chara02_c.png', 12, 8);
 
-		// Wait for the texture to load
-		this._characterTexture.on('loaded', function () {
-			self.texture(self._characterTexture)
-				.dimensionsFromCell();
+        // Wait for the texture to load
+        this._characterTexture.on('loaded', function () {
+            self.texture(self._characterTexture)
+                .dimensionsFromCell();
 
-            self.setType(0);
-		}, false, true);
+            self.setType( animationType || 0 );
+        }, false, true);
 
         this._lastTranslate = this._translate.clone();
 	},

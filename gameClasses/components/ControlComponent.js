@@ -1,17 +1,10 @@
 /**
- * Determine if the client can control or interact with this entity
+ * Determine if the client can control or interact with this entity and how
  * @type {IgeClass}
  */
 var ControlComponent = IgeClass.extend({
 	classId: 'ControlComponent',
 	componentId: 'Control',
-
-    //Type of control
-    typeOwn: 1,
-    typeAlly: 2,
-    typeEnemy: 3,
-
-
 	
 	init: function (entity, options) {
 		var self = this;
@@ -50,12 +43,21 @@ var ControlComponent = IgeClass.extend({
         return this._controlType;
     },
 
+    attackAction: function(entity) {
+
+    },
+
+    stopMoveAction: function() {
+        this._entity.path.clear().stop();
+        ige.network.send('playerStopMove');
+    },
+
     /**
      * Move entity
      * @param endTile
      * @private
      */
-    moveToTile: function (endTile) {
+    moveAction: function (endTile) {
         // Get the tile co-ordinates that the mouse is currently over
         var currentPosition = this._entity._translate,
             startTile,

@@ -2,7 +2,7 @@
 var CharacterContainer = IgeEntityBox2d.extend({
     classId: 'CharacterContainer',
 
-    init: function () {
+    init: function (animationType) {
         var self = this;
         IgeEntityBox2d.prototype.init.call(this);
 
@@ -39,9 +39,8 @@ var CharacterContainer = IgeEntityBox2d.extend({
 
 
             // Create a character entity as a child of this container
-            self.character = new Character()
+            self.character = new Character(animationType)
                 .id(self.id() + '_character')
-                .setType(3)
                 .highlight(false)
                 .drawBounds(false)
                 .drawBoundsData(false)

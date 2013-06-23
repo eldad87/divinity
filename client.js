@@ -135,7 +135,7 @@ var Client = IgeClass.extend({
 
         // Create the main viewport
         self.vp1 = new IgeViewport()
-            .addComponent(CommandComponent, {objectLayer: self.objectLayer})
+            .addComponent(CommandComponent, {client: self})
             .Command.enabled(true)
             .addComponent(IgeScreenMoveComponent)
             .screenMove.enabled(true)
@@ -210,75 +210,18 @@ var Client = IgeClass.extend({
 
     },
 
-    createPlayer: function() {
-        var self = this;
-
-        // Define a function that will be called when the
-        // mouse cursor moves over one of our entities
-        overFunc = function () {
-            this.highlight(true);
-            this.drawBounds(true);
-            this.drawBoundsData(true);
-        };
-
-        // Define a function that will be called when the
-        // mouse cursor moves away from one of our entities
-        outFunc = function () {
-            this.highlight(false);
-            this.drawBounds(false);
-            this.drawBoundsData(false);
-        };
-
-        // Create the 3d container that the player
-        // entity will be mounted to
-        self.player = new CharacterContainer()
-            .isometric(true)
-            .id('player')
-                .addComponent(PlayerComponent)
-                .addComponent(IgePathComponent)
-                .path.drawPath(true)
-            .addComponent(EntityOccupyPositionComponent)
-            .occupyPosition.enabled(true)
-            .box2dBody({
-                type: 'dynamic',
-                linearDamping: 0.0,
-                angularDamping: 0.1,
-                allowSleep: true,
-                bullet: true,
-                gravitic: true,
-                fixedRotation: true,
-                fixtures: [{
-                    density: 1.0,
-                    friction: 0.5,
-                    restitution: 0.2,
-                    shape: {
-                        type: 'rectangle',
-                        data: {
-                            width: 10,
-                            height: 10
-                        }
-                    }
-                }]
-            })
-            .mouseOver(overFunc)
-            .mouseOut(outFunc)
-            .drawBounds(false)
-            .drawBoundsData(false)
-            .mount(self.objectLayer);
-
-        // Check if the tileMap1 is is iso mode
-        if (self.objectLayer.isometricMounts()) {
-            // Set the player to move isometrically
-            self.player.isometric(true);
-        }
-
-
-    },
-
     loadTextures: function () {
         this.gameTexture.background1 = new IgeTexture('/divinity/assets/textures/backgrounds/grass_and_water.png');
         this.gameTexture.background2 = new IgeTexture('/divinity/assets/textures/backgrounds/tiled_cave_1.png');
         this.gameTexture.background2 = new IgeTexture('/divinity/assets/textures/sprites/vx_chara02_c.png');
+
+        //UI
+        this.gameTexture.uiCommandTop = new IgeTexture('/divinity/assets/textures/ui/command_top.png');
+        this.gameTexture.uiCommandBottom = new IgeTexture('/divinity/assets/textures/ui/command_bottom.png');
+
+        this.gameTexture.uiButtonStopMove = new IgeTexture('/divinity/assets/textures/ui/uiButton_stopMove.png');
+        this.gameTexture.uiButtonMove = new IgeTexture('/divinity/assets/textures/ui/uiButton_move.png');
+        this.gameTexture.uiButtonAttack = new IgeTexture('/divinity/assets/textures/ui/uiButton_attack.png');
     }
 });
 

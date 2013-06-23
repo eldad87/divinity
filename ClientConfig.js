@@ -8,10 +8,18 @@ var igeClientConfig = {
         './gameClasses/ClientNetworkEvents.js',
         './gameClasses/Character.js',
         './gameClasses/CharacterContainer.js',
+        './gameClasses/Unit.js',
+
+        './gameClasses/Units/Archer.js',
+        './gameClasses/Units/Huntress.js',
+
+
+
         './gameClasses/components/ControlComponent.js',
         './gameClasses/components/CommandComponent.js',
         './gameClasses/components/PlayerComponent.js',
         './gameClasses/CharacterAi.js',
+        '../ige/engine/ui/IgeUiGridPanel.js',
 
 		/* Standard game scripts */
 		'./client.js',
