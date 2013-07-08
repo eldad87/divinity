@@ -5,6 +5,7 @@
 var CommandComponent = IgeEventingClass.extend({
 	classId: 'CommandComponent',
 	componentId: 'Command',
+    _currentButtonAction: false,
 
     //Type of control
     typeOwn: 1,
@@ -174,7 +175,8 @@ var CommandComponent = IgeEventingClass.extend({
         }
 
         //Get share actions
-        var sharedActions = this._getSharedActionsForEntitiers(selectedEntities);
+        var sharedActions = this._getSharedActionsForEntitiers(selectedEntities),
+            self = this;
 
         //Action grid buttons
         for(var i=1; i<=3; i++) {
@@ -193,13 +195,68 @@ var CommandComponent = IgeEventingClass.extend({
                     .drawBounds(false)
                     .drawBoundsData(false)
                     .texture(this._options.client.gameTexture['uiButton' + actionName] )
+                    .mouseOver(function () {
+                        this.backgroundColor('#6b6b6b');
+                    })
+                    .mouseOut(function () {
+                        this.backgroundColor('');
+                    })
+                    .mouseUp(function () {
+                        this.select();
+                    })
+                    .select(function () {
+                        var buttonAction = self._lcfirst(
+                            this.id().substring('uiCommandBottomActionGridButton'.length)
+                        );
+
+                        self.currentButtonAction(buttonAction);
+                        self.triggerButtonAction(selectedEntities);
+
+
+                        this.backgroundColor('#00baff');
+                    })
+                    // Define the callback when the radio button is de-selected
+                    .deSelect(function () {
+                        this.backgroundColor('');
+                    })
                     .mount( this._options.client.uiCommandBottom.actionGrid );
             }
         }
     },
 
+    /**
+     * Trigger a button action on all selectedEntities
+     * @param selectedEntities
+     * @param args
+     */
+    triggerButtonAction: function(selectedEntities, args) {
+        var currentButtonAction = this.currentButtonAction() + 'Button';
+        for(var i in selectedEntities) {
+            selectedEntities[i][currentButtonAction].apply(selectedEntities[i], args);
+        }
+    },
+
+    /**
+     * Get/Set the currented selected button
+     * @param val
+     * @returns {*}
+     */
+    currentButtonAction: function(val) {
+        if (val !== undefined) {
+            this._currentButtonAction = val;
+
+            return this._entity;
+        }
+
+        return this._currentButtonAction;
+    },
+
     _ucfirst: function(str) {
         return str.charAt(0).toUpperCase() + str.slice(1); //moveStop -> MoveStop
+    },
+
+    _lcfirst: function(str) {
+        return str.charAt(0).toLowerCase() + str.slice(1); //moveStop -> MoveStop
     },
 
     _getSharedActionsForEntitiers: function(entities) {
@@ -313,6 +370,7 @@ var CommandComponent = IgeEventingClass.extend({
 
                 //Check if mouse moved
                 if(this._mouseStart.x != this._mouseEnd.x || this._mouseStart.y !=  this._mouseEnd.y) {
+                    this.currentButtonAction(false); //User tried to select entities, reset current button
                     this._handleSelection( [this.typeOwn] );
                 } else {
                     this._handleClick();
@@ -325,6 +383,11 @@ var CommandComponent = IgeEventingClass.extend({
 		}
     },
 
+    _triggetMethodOnSelected: function(selectedEntities, actionName, args) {
+        for(var i in selectedEntities) {
+            selectedEntities[i].action(actionName, args)
+        }
+    },
 
     /**
      * Handle click
@@ -332,19 +395,32 @@ var CommandComponent = IgeEventingClass.extend({
      */
     _handleClick: function() {
 
-        var overEntity = this.entityOver(),
-            selectedEntities = this.selectedEntities();
+        var currentButtonAction = this.currentButtonAction(),
+            overEntity = this.entityOver(),
+            selectedEntities = this.selectedEntities(),
+            endTile = this._options.client.objectLayer.pointToTile(this._mouseEnd);
 
+        //Trigger an action using the selected button
+        if(currentButtonAction &&
+            (currentButtonAction!='moveStopButton' && currentButtonAction!='buildButton')) {
+            if(overEntity) {
+                this.triggerButtonAction(selectedEntities, [endTile, overEntity.id()]);
+            } else {
+                this.triggerButtonAction(selectedEntities, [endTile]);
+            }
+
+            return true;
+        }
+
+
+        //Fallback to default action when no button is selected
         if(overEntity==false) {
             if(!selectedEntities.length) {
                 return true; //Nothing to do
             }
 
             //Move to tile
-            var endTile = this._options.client.objectLayer.pointToTile(this._mouseEnd);
-            for(var i in selectedEntities) {
-                selectedEntities[i].action('move', [endTile])
-            }
+            this._triggetMethodOnSelected(selectedEntities, 'move', [endTile]);
 
         } else {
             switch(overEntity.Control.controlType()) {
@@ -361,9 +437,7 @@ var CommandComponent = IgeEventingClass.extend({
                         return true; //Nothing to do
                     }
 
-                    for(var i in selectedEntities) {
-                        selectedEntities[i].action('attack', [overEntity.id()])
-                    }
+                    this._triggetMethodOnSelected(selectedEntities, 'attack',[endTile, overEntity.id()]);
 
                     break;
             }
@@ -401,7 +475,7 @@ var CommandComponent = IgeEventingClass.extend({
 
 
         //Get entities in selection.
-        var selectedEntities = this._getEntitiesInRect(this._options.client.objectLayer, topLeft.x, topLeft.y, width, height);
+        var selectedEntities = this.getEntitiesInRect(this._options.client.objectLayer, topLeft.x, topLeft.y, width, height);
 
         //Go over selected entities and remove unrelated
         var filteredEntities = [];
@@ -425,6 +499,7 @@ var CommandComponent = IgeEventingClass.extend({
             sharedActions = this.Command._getSharedActionsForEntitiers(selectedEntities),
             tmpAction,
             currentAction,
+            currentActionButton =  this.Command.currentButtonAction(),
             i;
 
         //First dimm all buttons
@@ -432,7 +507,15 @@ var CommandComponent = IgeEventingClass.extend({
             this.Command._options.client.uiCommandBottom.actionGridButtons[i].backgroundColor('');
         }
 
+        //A button is pressed
+        if(currentActionButton) {
+            currentActionButton = this.Command._ucfirst( currentActionButton );
+            ige.$('uiCommandBottomActionGridButton' + currentActionButton).backgroundColor('#6b6b6b');
+            return true;
+        }
 
+
+        //Get action from selected entities
         for(var i in selectedEntities) {
             tmpAction = selectedEntities[i].currentAction();
             if(!tmpAction) {
@@ -464,8 +547,6 @@ var CommandComponent = IgeEventingClass.extend({
         }
 
         //TODO: if action have a cool down,
-
-
     },
 
 
@@ -480,7 +561,7 @@ var CommandComponent = IgeEventingClass.extend({
      * @returns {Array}
      * @private
      */
-    _getEntitiesInRect: function (objectLayer, x, y, width, height) {
+    getEntitiesInRect: function (objectLayer, x, y, width, height) {
         var xi, yi, res = [];
 
         if (width === undefined) { width = 1; }

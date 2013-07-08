@@ -5,7 +5,7 @@ var Unit = CharacterContainer.extend({
         CharacterContainer.prototype.init.call(this, animationType);
 
         this._currentAction = false;
-        this._actionRepeaterUUID = false;
+
         this.unitSettings(actions, armor, hp, mana);
         if(!ige.isServer) {
             this.renderHP();
@@ -110,6 +110,10 @@ var Unit = CharacterContainer.extend({
         }
         this.currentAction(actionName);
 
+        if(args==undefined) {
+            args = [];
+        }
+
         this[actionName + 'Action'].apply(this, args);
 
         if(!ige.isServer) {
@@ -180,6 +184,37 @@ var Unit = CharacterContainer.extend({
 
         return this._unitSettings;
     },
+
+    /**
+     * Buttons
+     */
+    attackButton: function(endTile, overEntityId) {
+        if(!endTile) {
+            //a move button clicked
+            return true;
+        }
+
+        if(!overEntityId) {
+            //No units selected, cannot attack
+            return true;
+        }
+
+        this.action('attack', [overEntityId]);
+    },
+
+    moveStopButton: function() {
+        this.action('moveStop');
+    },
+
+    moveButton: function(endTile) {
+        if(!endTile) {
+            //a move button clicked
+            return true;
+        }
+
+        this.action('move', [endTile]);
+    },
+
 
     /**
      * Actions
@@ -285,31 +320,16 @@ var Unit = CharacterContainer.extend({
     },
 
     tick: function (ctx) {
-        if(this.repearAction && this.currentAction()==this.repearAction) {
-            this.action(this.repearAction, this.repearArgs);
+        if(this.repeaterAction && this.currentAction()==this.repeaterAction) {
+            this.action(this.repeaterAction, this.repeaterArgs);
         }
 
         CharacterContainer.prototype.tick.call(this, ctx);
     },
 
     _actionRepeater: function(timeInterval, actionName, args) {
-        this.repearAction = actionName;
-        this.repearArgs = args;
-
-
-        /*var self = this,
-            id = ige.newId();
-        this._actionRepeaterUUID = id;
-
-        setInterval(function () {
-            if(id!=self._actionRepeaterUUID) {
-                return false;
-            }
-
-            self.action(actionName, args);
-        },
-            timeInterval*1000
-        );*/
+        this.repeaterAction = actionName;
+        this.repeaterArgs = args;
     },
 
     _caldFinalDmg: function(attack, armor) {
