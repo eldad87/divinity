@@ -11,6 +11,7 @@ var config = {
         {name: 'Unit', path: './gameClasses/Unit'},
         {name: 'Archer', path: './gameClasses/Units/Archer'},
         {name: 'Huntress', path: './gameClasses/Units/Huntress'},
+        {name: 'Wisp', path: './gameClasses/Units/Wisp'},
 		{name: 'tiledExample1', path: './maps/example'}
 		//{name: 'EntityOccupyPositionComponent', path: './gameClasses/EntityOccupyPositionComponent'}
 	]

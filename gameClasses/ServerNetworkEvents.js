@@ -25,7 +25,7 @@ var ServerNetworkEvents = {
 
 	_onPlayerEntity: function (data, clientId) {
 		if (!ige.server.players[clientId]) {
-			ige.server.players[clientId] = new Huntress(clientId)
+			ige.server.players[clientId] = new Wisp(clientId)
 				// .addComponent(PlayerComponent)
 				.streamMode(1)
 				.mount(ige.server.objectLayer);

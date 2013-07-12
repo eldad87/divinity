@@ -110,7 +110,7 @@ var CommandComponent = IgeEventingClass.extend({
             .mount(this._options.client.uiScene);
 
 
-        this._rebuildActionButtons();
+        this.buildEntitiesActionsGrid();
 
         //Hero items gird
         this._options.client.uiCommandBottom.heroItemsGrid = new IgeUiGridPanel(73, 73)
@@ -144,7 +144,17 @@ var CommandComponent = IgeEventingClass.extend({
      *  place the shared actions into the User command UI
      * @private
      */
-    _rebuildActionButtons: function() {
+    rebuildActionButtonsBasedOnSelectedEntities: function() {
+        // Get shared actions for selected entities
+        var selectedEntities = this.selectedEntities(),
+            sharedActions = this._getSharedActionsForEntitiers(selectedEntities);
+        return this.buildEntitiesActionsGrid(selectedEntities, sharedActions);
+    },
+
+    /**
+     * Build actions and onclick, trigger the actions on the given entities
+     */
+    buildEntitiesActionsGrid: function(entities, sharedActions) {
         //Action grid
         if(!this._options.client.uiCommandBottom.actionGrid) {
             this._options.client.uiCommandBottom.actionGrid = new IgeUiGridPanel(86, 86)
@@ -168,15 +178,12 @@ var CommandComponent = IgeEventingClass.extend({
         }
 
 
-        // Get shared actions for selected entities
-        var selectedEntities = this.selectedEntities();
-        if(!selectedEntities) {
+
+        if(!entities) {
             return true;
         }
 
-        //Get share actions
-        var sharedActions = this._getSharedActionsForEntitiers(selectedEntities),
-            self = this;
+        var self = this;
 
         //Action grid buttons
         for(var i=1; i<=3; i++) {
@@ -184,6 +191,11 @@ var CommandComponent = IgeEventingClass.extend({
 
                 var actionNum = ((i-1)*4)+u-1;
                 if(sharedActions[actionNum]==undefined) {
+                    continue;
+                }
+
+                //Only if 1 builder is selected - show the build method
+                if(entities.length>1 && sharedActions[actionNum]=='build') {
                     continue;
                 }
 
@@ -210,7 +222,7 @@ var CommandComponent = IgeEventingClass.extend({
                         );
 
                         self.currentButtonAction(buttonAction);
-                        self.triggerButtonAction(selectedEntities);
+                        self.triggerButtonAction(buttonAction, entities);
 
 
                         this.backgroundColor('#00baff');
@@ -226,11 +238,12 @@ var CommandComponent = IgeEventingClass.extend({
 
     /**
      * Trigger a button action on all selectedEntities
+     * @param currentButtonAction
      * @param selectedEntities
      * @param args
      */
-    triggerButtonAction: function(selectedEntities, args) {
-        var currentButtonAction = this.currentButtonAction() + 'Button';
+    triggerButtonAction: function(currentButtonAction, selectedEntities, args) {
+        currentButtonAction = currentButtonAction + 'Button';
         for(var i in selectedEntities) {
             selectedEntities[i][currentButtonAction].apply(selectedEntities[i], args);
         }
@@ -319,7 +332,7 @@ var CommandComponent = IgeEventingClass.extend({
     selectedEntities: function(val) {
         if (val !== undefined) {
             this._selectedEntities = val;
-            this._rebuildActionButtons();
+            this.rebuildActionButtonsBasedOnSelectedEntities();
 
             ige.log('Selected entities: ' + this._selectedEntities.length );
 
@@ -404,9 +417,9 @@ var CommandComponent = IgeEventingClass.extend({
         if(currentButtonAction &&
             (currentButtonAction!='moveStop' && currentButtonAction!='build')) {
             if(overEntity) {
-                this.triggerButtonAction(selectedEntities, [endTile, overEntity.id()]);
+                this.triggerButtonAction(currentButtonAction, selectedEntities, [endTile, overEntity.id()]);
             } else {
-                this.triggerButtonAction(selectedEntities, [endTile]);
+                this.triggerButtonAction(currentButtonAction, selectedEntities, [endTile]);
             }
 
             return true;
@@ -509,8 +522,11 @@ var CommandComponent = IgeEventingClass.extend({
 
         //A button is pressed
         if(currentActionButton) {
-            currentActionButton = this.Command._ucfirst( currentActionButton );
-            ige.$('uiCommandBottomActionGridButton' + currentActionButton).backgroundColor('#6b6b6b');
+            if(currentActionButton!='build') {
+                currentActionButton = this.Command._ucfirst( currentActionButton );
+                var buttonElement = ige.$('uiCommandBottomActionGridButton' + currentActionButton);
+                buttonElement.backgroundColor('#6b6b6b');
+            }
             return true;
         }
 

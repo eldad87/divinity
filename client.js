@@ -221,6 +221,11 @@ var Client = IgeClass.extend({
         this.gameTexture.uiButtonMoveStop = new IgeTexture('/divinity/assets/textures/ui/uiButton_moveStop.png');
         this.gameTexture.uiButtonMove = new IgeTexture('/divinity/assets/textures/ui/uiButton_move.png');
         this.gameTexture.uiButtonAttack = new IgeTexture('/divinity/assets/textures/ui/uiButton_attack.png');
+        this.gameTexture.uiButtonBuild = new IgeTexture('/divinity/assets/textures/ui/uiButton_build.png');
+
+
+        this.gameTexture.uiButtonBuildTreeOfLife = new IgeTexture('/divinity/assets/textures/ui/uiButton_buildTreeOfLife.png');
+        this.gameTexture.uiButtonBuildAncientOfWar = new IgeTexture('/divinity/assets/textures/ui/uiButton_buildAncientOfWar.png');
     }
 });
 
