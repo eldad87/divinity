@@ -6,41 +6,43 @@ var CharacterContainer = IgeEntityBox2d.extend({
         var self = this;
         IgeEntityBox2d.prototype.init.call(this);
 
+        /* CEXCLUDE */
         if (ige.isServer) {
-        // Set bounding box
-        self.box2dBody({
-            type: 'dynamic',
-            linearDamping: 0.0,
-            angularDamping: 0.1,
-            allowSleep: true,
-            bullet: false,
-            gravitic: true,
-            fixedRotation: false,
-            fixtures: [{
-                density: 1.0,
-                friction: 0.5,
-                restitution: 0.2,
-                shape: {
-                    type: 'circle'
-                }
-            }]
-        });
+            // Set bounding box
+            self.box2dBody({
+                type: 'dynamic',
+                linearDamping: 0.0,
+                angularDamping: 0.1,
+                allowSleep: true,
+                bullet: false,
+                gravitic: true,
+                fixedRotation: false,
+                fixtures: [{
+                    density: 1.0,
+                    friction: 0.5,
+                    restitution: 0.2,
+                    shape: {
+                        type: 'circle'
+                    }
+                }]
+            });
         }
+        /* CEXCLUDE */
+
+        // Setup the entity 3d bounds
+        self.size3d(20, 20, 40);
 
         if (!ige.isServer) {
-            // Setup the entity 3d bounds
-            self.size3d(20, 20, 40);
-
-            //For debug, occupy the current entity position
-            self.addComponent(EntityOccupyPositionComponent)
-                .occupyPosition.enabled(true);
-
             // Create a character entity as a child of this container
             self.character = new Character(animationType)
                 .id(self.id() + '_character')
                 .drawBounds(false)
                 .originTo(0.5, 0.6, 0.5)
                 .mount(self);
+
+            //For debug, occupy the current entity position
+            self.addComponent(EntityOccupyPositionComponent)
+                .occupyPosition.enabled(true);
 
             // Check if the objectLayer is is iso mode
             if (ige.$('objectLayer').isometricMounts()) {

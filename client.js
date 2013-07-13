@@ -139,6 +139,12 @@ var Client = IgeClass.extend({
             .addComponent(IgeScreenMoveComponent)
             .screenMove.enabled(true)
             .screenMove.enableContinuousMovement(false)
+
+            .mouseMove(function (event) {
+                self.vp1.Command._mouseMove(event);
+                self.vp1.screenMove._mouseMove(event);
+            })
+
             .id('vp1')
             .depth(1)
             .autoSize(true)
@@ -218,15 +224,19 @@ var Client = IgeClass.extend({
         this.gameTexture.uiCommandTop = new IgeTexture('/divinity/assets/textures/ui/command_top.png');
         this.gameTexture.uiCommandBottom = new IgeTexture('/divinity/assets/textures/ui/command_bottom.png');
 
-        this.gameTexture.uiButtonMoveStop = new IgeTexture('/divinity/assets/textures/ui/uiButton_moveStop.png');
+        //Buttons
+        this.gameTexture.uiButtonCancel = new IgeTexture('/divinity/assets/textures/ui/uiButton_cancel.png');
         this.gameTexture.uiButtonMove = new IgeTexture('/divinity/assets/textures/ui/uiButton_move.png');
         this.gameTexture.uiButtonAttack = new IgeTexture('/divinity/assets/textures/ui/uiButton_attack.png');
         this.gameTexture.uiButtonBuild = new IgeTexture('/divinity/assets/textures/ui/uiButton_build.png');
-
-
+        //Sub buttons
         this.gameTexture.uiButtonBuildTreeOfLife = new IgeTexture('/divinity/assets/textures/ui/uiButton_buildTreeOfLife.png');
         this.gameTexture.uiButtonBuildAncientOfWar = new IgeTexture('/divinity/assets/textures/ui/uiButton_buildAncientOfWar.png');
+
+        //Buildings
+        this.gameTexture.treeOfLife = new IgeTexture('/divinity/assets/textures/buildings/bank1.png');
     }
+
 });
 
 if (typeof(module) !== 'undefined' && typeof(module.exports) !== 'undefined') { module.exports = Client; }

@@ -31,8 +31,6 @@ var CommandComponent = IgeEventingClass.extend({
 
         this._overEntity  = false;
         this._selectedEntities = [];
-
-        this._entity.addBehaviour('highlight_action_buttons_behaviour', this._highlightActionButtonsBehaviour);
 	},
 
 	/**
@@ -53,6 +51,7 @@ var CommandComponent = IgeEventingClass.extend({
                     // Listen for the mouse events we need to operate a mouse pan
                     this._entity.mouseDown(function (event) { self._mouseDown(event); });
                     this._entity.mouseUp(function (event) { self._mouseUp(event); });
+                    this._entity.mouseMove(function (event) { self._mouseMove(event); });
                     this.drawUI();
                 } else {
                     // Remove the zoom start data
@@ -177,10 +176,13 @@ var CommandComponent = IgeEventingClass.extend({
             }
         }
 
-
-
         if(!entities) {
             return true;
+        }
+
+        //Add cancel button, but not to the first main menu
+        if(this.currentButtonAction()) {
+            sharedActions.push('cancel');
         }
 
         var self = this;
@@ -207,12 +209,6 @@ var CommandComponent = IgeEventingClass.extend({
                     .drawBounds(false)
                     .drawBoundsData(false)
                     .texture(this._options.client.gameTexture['uiButton' + actionName] )
-                    .mouseOver(function () {
-                        this.backgroundColor('#6b6b6b');
-                    })
-                    .mouseOut(function () {
-                        this.backgroundColor('');
-                    })
                     .mouseUp(function () {
                         this.select();
                     })
@@ -221,11 +217,16 @@ var CommandComponent = IgeEventingClass.extend({
                             this.id().substring('uiCommandBottomActionGridButton'.length)
                         );
 
-                        self.currentButtonAction(buttonAction);
-                        self.triggerButtonAction(buttonAction, entities);
-
+                        if(buttonAction=='cancel') {
+                            self.currentButtonAction(false);
+                            self.triggerButtonAction(buttonAction, entities);
+                            return true;
+                        }
 
                         this.backgroundColor('#00baff');
+
+                        self.currentButtonAction(buttonAction);
+                        self.triggerButtonAction(buttonAction, entities);
                     })
                     // Define the callback when the radio button is de-selected
                     .deSelect(function () {
@@ -243,9 +244,18 @@ var CommandComponent = IgeEventingClass.extend({
      * @param args
      */
     triggerButtonAction: function(currentButtonAction, selectedEntities, args) {
+        if(!args) {
+            args = [];
+        }
+        args.unshift(0);
+        args.unshift(selectedEntities);
         currentButtonAction = currentButtonAction + 'Button';
         for(var i in selectedEntities) {
-            selectedEntities[i][currentButtonAction].apply(selectedEntities[i], args);
+            args[0] = i;
+            if(selectedEntities[i][currentButtonAction].apply(selectedEntities[i], args)) {
+                //User asked to stop button
+                return true;
+            }
         }
     },
 
@@ -332,6 +342,7 @@ var CommandComponent = IgeEventingClass.extend({
     selectedEntities: function(val) {
         if (val !== undefined) {
             this._selectedEntities = val;
+
             this.rebuildActionButtonsBasedOnSelectedEntities();
 
             ige.log('Selected entities: ' + this._selectedEntities.length );
@@ -384,6 +395,8 @@ var CommandComponent = IgeEventingClass.extend({
                 //Check if mouse moved
                 if(this._mouseStart.x != this._mouseEnd.x || this._mouseStart.y !=  this._mouseEnd.y) {
                     this.currentButtonAction(false); //User tried to select entities, reset current button
+                    this.cursorItem(false); //Destroy cursor item
+
                     this._handleSelection( [this.typeOwn] );
                 } else {
                     this._handleClick();
@@ -394,6 +407,50 @@ var CommandComponent = IgeEventingClass.extend({
 				delete this._mouseEnd;
 			}
 		}
+    },
+
+    cursorItem: function(item) {
+        if(item!=undefined) {
+            //Check if we already have a cursor item
+            if(ige.client.data('cursorItem')) {
+                //Destroy it
+                ige.client.data('cursorItem').destroy();
+            }
+
+            ige.client.data('cursorItem', item);
+        }
+
+        return ige.client.data('cursorItem') || false;
+    },
+
+    /**
+     * Set an entity to follow the mouse movment
+     *  Can be used for building and showing and impact area of some kind of a megical action
+     *
+     * @param event
+     * @private
+     */
+    _mouseMove: function(event) {
+        if (this.cursorItem()) {
+            // We have a ghost item so move it to where the  mouse is!
+            var mousePos = this._options.client.objectLayer.mouseToTile().clone();
+
+            // Check if mouse is on dirt
+            var isOnDirt =  ige.$('DirtLayer').map.collision(mousePos.x, mousePos.y,
+                                this.cursorItem().data('tileWidth'), this.cursorItem().data('tileHeight')),
+                // Check the tile is not currently occupied!
+                isOnEntity = ige.$('objectLayer').map.collision(mousePos.x, mousePos.y,
+                                this.cursorItem().data('tileWidth'), this.cursorItem().data('tileHeight'));
+
+            this.cursorItem()
+                    .data('tileX', mousePos.x)
+                    .data('tileY', mousePos.y)
+                    .translateToTile(mousePos.x + 0.5, mousePos.y + 0.5, 0)
+                    .layerData(
+                        isOnDirt,
+                        isOnEntity
+                    );
+        }
     },
 
     _triggetMethodOnSelected: function(selectedEntities, actionName, args) {
@@ -415,7 +472,7 @@ var CommandComponent = IgeEventingClass.extend({
 
         //Trigger an action using the selected button
         if(currentButtonAction &&
-            (currentButtonAction!='moveStop' && currentButtonAction!='build')) {
+            (currentButtonAction!='build')) {
             if(overEntity) {
                 this.triggerButtonAction(currentButtonAction, selectedEntities, [endTile, overEntity.id()]);
             } else {
@@ -506,65 +563,6 @@ var CommandComponent = IgeEventingClass.extend({
         //Set selected entities
         this.selectedEntities(filteredEntities);
     },
-
-    _highlightActionButtonsBehaviour: function () {
-        var selectedEntities = this.Command.selectedEntities(),
-            sharedActions = this.Command._getSharedActionsForEntitiers(selectedEntities),
-            tmpAction,
-            currentAction,
-            currentActionButton =  this.Command.currentButtonAction(),
-            i;
-
-        //First dimm all buttons
-        for(var i in this.Command._options.client.uiCommandBottom.actionGridButtons) {
-            this.Command._options.client.uiCommandBottom.actionGridButtons[i].backgroundColor('');
-        }
-
-        //A button is pressed
-        if(currentActionButton) {
-            if(currentActionButton!='build') {
-                currentActionButton = this.Command._ucfirst( currentActionButton );
-                var buttonElement = ige.$('uiCommandBottomActionGridButton' + currentActionButton);
-                buttonElement.backgroundColor('#6b6b6b');
-            }
-            return true;
-        }
-
-
-        //Get action from selected entities
-        for(var i in selectedEntities) {
-            tmpAction = selectedEntities[i].currentAction();
-            if(!tmpAction) {
-                return false; //1 of the units is doing nothing
-            }
-
-            if(currentAction==undefined) {
-                currentAction = tmpAction;
-            }
-
-            if(sharedActions.indexOf(tmpAction)==-1) {
-                return false; //Not shared action
-            }
-
-            if(currentAction!=tmpAction) {
-                return false; //Units are doing more then 1 action
-            }
-        }
-
-        //Highlight button actions
-        for(i in sharedActions) {
-            var actionName = this.Command._ucfirst(sharedActions[i]);
-
-            //Highlight
-            if(sharedActions[i]==currentAction) {
-                //ige.log('highlight: uiCommandBottomActionGridButton' + actionName);
-                ige.$('uiCommandBottomActionGridButton' + actionName).backgroundColor('#6b6b6b');
-            }
-        }
-
-        //TODO: if action have a cool down,
-    },
-
 
     /**
      * Return all entities in objectLayer that located inside the given rect

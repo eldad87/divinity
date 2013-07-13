@@ -9,11 +9,15 @@ var igeClientConfig = {
         './gameClasses/Character.js',
         './gameClasses/CharacterContainer.js',
         './gameClasses/ArmorAttackChart.js',
+        './gameClasses/BaseEntity.js',
         './gameClasses/Unit.js',
 
         './gameClasses/Units/Archer.js',
         './gameClasses/Units/Huntress.js',
         './gameClasses/Units/Wisp.js',
+
+        './gameClasses/Building.js',
+        './gameClasses/Buildings/TreeOfLife.js',
 
         './gameClasses/ui/EntityUiProgressBar.js',
 

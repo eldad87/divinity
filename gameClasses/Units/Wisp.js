@@ -3,7 +3,8 @@ var Wisp = Unit.extend({
     init: function () {
         Unit.prototype.init.call(
             this,
-            {move:{speed:0.1}, moveStop:{}, build:{}},
+            {move:{speed:0.1}, build:{}},
+            {moveStop:{}, buildTreeOfLife:{}},
             {type: armor.medium, amount: 1},
             {max: 70.0, current: 70.0},
             {max: 0.0, current: 0.0},
@@ -15,19 +16,29 @@ var Wisp = Unit.extend({
     /**
      * Buttons
      */
-    buildButton: function(endTile, overEntityId) {
-        ige.$('vp1').Command.buildEntitiesActionsGrid([this], ['buildTreeOfLife', 'buildAncientOfWar']);
-    },
-    cancelButton: function(endTile, overEntityId) {
-        ige.$('vp1').Command.rebuildActionButtonsBasedOnSelectedEntities();
+    buildButton: function(pos, selectedEntities, endTile, overEntityId) {
+       this.getCommand().buildEntitiesActionsGrid([this], ['buildTreeOfLife', 'buildAncientOfWar']);
+       return true; //Stop stoppropagation
     },
 
-    buildTreeOfLifeButton: function(endTile, overEntityId) {
+    buildTreeOfLifeButton: function(pos, selectedEntities, endTile, overEntityId) {
+        if(!endTile) {
+            //Click on button, set cursor with building
+            var tempItem = new TreeOfLife( this.parent(), -1000, -1000);
 
-    },
-    buildAncientOfWarButton: function(endTile, overEntityId) {
+            this.getCommand().cursorItem(tempItem);
+            return true; //Stop stoppropagation
+        }
 
+        //Click on map, check if can build
+
+        //Reset cursor
+        this.getCommand().cursorItem(false);
+
+        //Build
+
+
+        return true; //Stop stoppropagation
     }
-
 });
 if (typeof(module) !== 'undefined' && typeof(module.exports) !== 'undefined') { module.exports = Wisp; }
