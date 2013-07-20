@@ -3,7 +3,7 @@ var Archer = Unit.extend({
     init: function () {
         Unit.prototype.init.call(
             this,
-            {move:{speed:0.1}, moveStop:{}, attack:{type: attack.piercing, amount: 7, range: 3, cooldown: 1, lastUsageTime: 0}},
+            {move:{speed:0.1}, moveStop:{}, attack:{type: attack.piercing, amount: 7, range: 3, isRepeatable: true, cooldown: 1, lastUsageTime:0}},
             {moveStop:{}},
             {type: armor.light, amount: 0},
             {max: 120.0, current: 120.0},

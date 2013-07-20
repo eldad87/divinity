@@ -7,9 +7,8 @@ var igeClientConfig = {
 
         './gameClasses/ClientNetworkEvents.js',
         './gameClasses/Character.js',
-        './gameClasses/CharacterContainer.js',
-        './gameClasses/ArmorAttackChart.js',
         './gameClasses/BaseEntity.js',
+        './gameClasses/ArmorAttackChart.js',
         './gameClasses/Unit.js',
 
         './gameClasses/Units/Archer.js',

@@ -241,9 +241,9 @@ var CommandComponent = IgeEventingClass.extend({
      * Trigger a button action on all selectedEntities
      * @param currentButtonAction
      * @param selectedEntities
-     * @param args
+     * @param target
      */
-    triggerButtonAction: function(currentButtonAction, selectedEntities, args) {
+    triggerButtonAction: function(currentButtonAction, selectedEntities, target) {
         if(!args) {
             args = [];
         }
@@ -252,7 +252,7 @@ var CommandComponent = IgeEventingClass.extend({
         currentButtonAction = currentButtonAction + 'Button';
         for(var i in selectedEntities) {
             args[0] = i;
-            if(selectedEntities[i][currentButtonAction].apply(selectedEntities[i], args)) {
+            if(selectedEntities[i][currentButtonAction].call(selectedEntities[i], target)) {
                 //User asked to stop button
                 return true;
             }
@@ -453,9 +453,9 @@ var CommandComponent = IgeEventingClass.extend({
         }
     },
 
-    _triggetMethodOnSelected: function(selectedEntities, actionName, args) {
+    _triggetMethodOnSelected: function(selectedEntities, actionName, target, args) {
         for(var i in selectedEntities) {
-            selectedEntities[i].action(actionName, args)
+            selectedEntities[i].action(actionName, target, args)
         }
     },
 
@@ -468,16 +468,18 @@ var CommandComponent = IgeEventingClass.extend({
         var currentButtonAction = this.currentButtonAction(),
             overEntity = this.entityOver(),
             selectedEntities = this.selectedEntities(),
+            sharedActions = this._getSharedActionsForEntitiers(selectedEntities)
             endTile = this._options.client.objectLayer.pointToTile(this._mouseEnd);
 
         //Trigger an action using the selected button
         if(currentButtonAction &&
             (currentButtonAction!='build')) {
-            if(overEntity) {
-                this.triggerButtonAction(currentButtonAction, selectedEntities, [endTile, overEntity.id()]);
+            /*if(overEntity) {
+                this.triggerButtonAction(currentButtonAction, selectedEntities, endTile, overEntity.id());
             } else {
-                this.triggerButtonAction(currentButtonAction, selectedEntities, [endTile]);
-            }
+                this.triggerButtonAction(currentButtonAction, selectedEntities, endTile);
+            }*/
+            this.triggerButtonAction(currentButtonAction, selectedEntities, (endTile || overEntity.id()) );
 
             return true;
         }
@@ -489,8 +491,11 @@ var CommandComponent = IgeEventingClass.extend({
                 return true; //Nothing to do
             }
 
+            if(sharedActions.indexOf('move')==-1) {
+                return true; //Unit can't move
+            }
             //Move to tile
-            this._triggetMethodOnSelected(selectedEntities, 'move', [endTile]);
+            this._triggetMethodOnSelected(selectedEntities, 'move', endTile);
 
         } else {
             switch(overEntity.Control.controlType()) {
@@ -507,7 +512,19 @@ var CommandComponent = IgeEventingClass.extend({
                         return true; //Nothing to do
                     }
 
-                    this._triggetMethodOnSelected(selectedEntities, 'attack',[endTile, overEntity.id()]);
+                    if(sharedActions.indexOf('attack')==-1) {
+                        //Unit can't attack
+                        if(sharedActions.indexOf('move')==-1) {
+                            return true; //Unit can't move
+                        } else {
+                            //Move instead of attack
+                            this._triggetMethodOnSelected(selectedEntities, 'move', endTile);
+                            return true;
+                        }
+                    }
+
+                    //Attack
+                    this._triggetMethodOnSelected(selectedEntities, 'attack', overEntity.id());
 
                     break;
             }

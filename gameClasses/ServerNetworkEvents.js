@@ -35,10 +35,15 @@ var ServerNetworkEvents = {
 		}
 	},
 
+    /**
+     *
+     * @param data [EntityId, ActionName, Target, Args]
+     * @param clientId
+     * @private
+     */
     _onAction: function (data, clientId) {
-        var actionName = data.pop(),
-            entityId = data.pop();
-        ige.$(entityId).action(actionName, data);
+        ige.$(data[0]).
+            action(data[1], data[2], data[3]);
     }
 
 };

@@ -1,12 +1,12 @@
 // Define our AI character classes
-var CharacterAi = CharacterContainer.extend({
+var CharacterAi = Unit.extend({
 	classId: 'CharacterAi',
 
 	init: function (collisionMap, pathFinder) {
 		var self = this,
 			newPathMethod;
 
-        CharacterContainer.prototype.init.call(this);
+        Unit.prototype.init.call(this);
 
 		this.pathFinder = pathFinder;
 		this.collisionMap = collisionMap;

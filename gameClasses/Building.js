@@ -1,4 +1,4 @@
-var Building = IgeEntityBox2d.extend({
+var Building = BaseEntity.extend({
     classId: 'Building',
 
     /**
@@ -10,18 +10,7 @@ var Building = IgeEntityBox2d.extend({
      * @param mana
      */
     init: function (actions, subActions, armor, hp, mana) {
-        this.implement(BaseEntity);
-
-        IgeEntityBox2d.prototype.init.call(this);
-
-        this._currentAction = false;
-
-        this.unitSettings(actions, subActions, armor, hp, mana);
-        if(!ige.isServer) {
-            this.renderHP();
-        }
-        this.addComponent(ControlComponent);
-        this.streamSections(['transform', 'unit']);
+        BaseEntity.prototype.init.call(this);
     },
 
     layerData: function(isOnDirt, isOnEntity) {

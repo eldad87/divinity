@@ -1,5 +1,45 @@
-var BaseEntity = {
+var BaseEntity = IgeEntityBox2d.extend({
     classId: 'BaseEntity',
+
+    /**
+     *
+     * @param actions - main actions, will be displayed when unit is selected
+     * @param subActions - actions that will appear on navigation (I.e build)
+     * @param armor
+     * @param hp
+     * @param mana
+     */
+    init: function (actions, subActions, armor, hp, mana) {
+        //this.implement(BaseEntity);
+
+        IgeEntityBox2d.prototype.init.call(this);
+
+        this._currentAction = false;
+
+        this.unitSettings(actions, subActions, armor, hp, mana);
+        if(!ige.isServer) {
+            this.renderHP();
+        }
+        this.addComponent(ControlComponent);
+        this.streamSections(['transform', 'unit']);
+    },
+
+
+
+    tick: function (ctx) {
+        if(this.repeaterAction && this.currentAction()==this.repeaterAction) {
+            this.action(this.repeaterAction, this.repeaterTarget, this.repeaterArgs);
+        }
+
+        IgeEntityBox2d.prototype.tick.call(this, ctx);
+    },
+
+    actionRepeater: function(actionName, target, args) {
+        this.repeaterAction = actionName;
+        this.repeaterTarget = target;
+        this.repeaterArgs = args;
+    },
+
 
     addHP: function(val) {
         var hp = this.getUnitSetting('healthPoints', 'current');
@@ -39,7 +79,7 @@ var BaseEntity = {
                 if (data) {
                     // We have been given new data!
                     data = JSON.parse(data);
-                    this.unitSettings(data.actions, data.armor, data.healthPoints, data.manaPoints);
+                    this.unitSettings(data.actions, data.subActions, data.armor, data.healthPoints, data.manaPoints);
                 }
             }
             /* CEXCLUDE */
@@ -52,7 +92,7 @@ var BaseEntity = {
             // The section was not one that we handle here, so pass this
             // to the super-class streamSectionData() method - it handles
             // the "transform" section by itself
-            return CharacterContainer.prototype.streamSectionData.call(this, sectionId, data);
+            return IgeEntityBox2d.prototype.streamSectionData.call(this, sectionId, data);
         }
     },
 
@@ -85,26 +125,161 @@ var BaseEntity = {
         return this._currentAction;
     },
 
-    action: function(actionName, args) {
-        if(this._unitSettings.actions[actionName]==undefined &&
-            this._unitSettings.subActions[actionName]==undefined) {
+    action: function(actionName, target, args) {
+        if(!this.alive()) {
+            return false;
+        }
+
+        var actionSettings = this.getUnitSetting('actions', actionName) ||
+                        this.getUnitSetting('subActions', actionName);
+
+        if(actionSettings==undefined) {
             throw new EventException('Invalid entity action is used');
         }
+
         this.currentAction(actionName);
-
-        if(args==undefined) {
-            args = [];
+        if(actionSettings.isRepeatable) {
+            //TODO: exception, cant have NO args.
+            this._repeatableAction(actionName, target, args);
+        } else {
+            args = args || [];
+            this[actionName + 'Action'].call(this, target, args);
         }
-
-        this[actionName + 'Action'].apply(this, args);
 
         if(!ige.isServer) {
-            args.push(this.id());
-            args.push(actionName);
-
             //Send action to server
-            ige.network.send('action', args);
+            ige.network.send('action', [this.id(), actionName, target, args]);
         }
+    },
+
+    _repeatableAction: function(actionName, target, args) {
+        if(this.currentAction()!=actionName) {
+            return true;
+        }
+
+
+        //Check if EntityId or Position is given
+        var targetPosition = target; //By default, treat target is position
+        if(target.x==undefined) {
+            //EntityId is given
+            var targetEntity = ige.$(target);
+
+            //Check if target is alive
+            if(!targetEntity || targetEntity.alive()===false) {
+                this.currentAction(false);
+                return true;
+            }
+
+            targetPosition = targetEntity._translate;
+        }
+
+
+        var currentPosition = this._translate;
+        if (this._parent.isometricMounts()) {
+            currentPosition = this._parent.pointToTile(currentPosition.toIso());
+            targetPosition = this._parent.pointToTile(targetPosition.toIso());
+        } else {
+            currentPosition = this._parent.pointToTile(currentPosition);
+            targetPosition = this._parent.pointToTile(targetPosition);
+        }
+
+
+        //Check the distance between the unit and target
+        var distance = Math.distance(currentPosition.x, currentPosition.y, targetPosition.x, targetPosition.y);
+
+        //Get range
+        var actionSetting   = this.getUnitSetting('actions', actionName) || this.getUnitSetting('subActions', actionName),
+            isSubAction     = this.getUnitSetting('actions', actionName) ? false : true,
+            actionRange     = actionSetting.range+ 1,
+            isTargetInRange = actionRange>=distance,
+            moveableUnit    = (this.getUnitSetting('actions', 'move') || this.getUnitSetting('subActions', 'move'))  ? true : false,
+            movementEndPoint;
+
+
+        if(!isTargetInRange && !moveableUnit) {
+            //Target is out of
+            // range, and unit cannot move
+            return false;
+        }
+
+        if(!isTargetInRange) {
+            movementEndPoint = this.path.endPoint();
+
+            //Before moving, check if we already on the move
+            if(movementEndPoint==null) {
+                //Unit ISN'T MOVING, get closer to the target
+                this.moveAction(targetPosition);
+
+                //Set repeater
+                this.actionRepeater(actionName, target, args);
+
+                return true;
+            } else {
+                //Units IS MOVING, check the distance between the final-destination and the target
+                distance = Math.distance(movementEndPoint.x, movementEndPoint.y, targetPosition.x, targetPosition.y);
+                if(actionRange<distance) {
+
+                    //Destination is wrong, re-calc it
+                    this.moveAction(targetPosition);
+                }
+
+                //Set repeater
+                this.actionRepeater(actionName, target, args);
+                return true;
+            }
+        }
+
+
+        //Target in IN RANGE
+        if(moveableUnit) {
+            //Stop moving
+            this.moveStopAction();
+        }
+
+
+        /**
+         * Check cooldown
+         */
+        var currentTime = new Date().getTime();
+        if(actionSetting.cooldown!=undefined) {
+            if(currentTime <= (actionSetting['lastUsageTime'] + actionSetting.cooldown*1000)) {
+                //Cool down still active
+
+                //Set repeater
+                this.actionRepeater(actionName, target, args);
+
+                return false;
+            }
+        }
+
+        //Set last used time, mainly for cooldown
+        this.setUnitSetting( (isSubAction ? 'subActions' : 'actions'), actionName, 'lastUsageTime', currentTime);
+
+
+        /**
+         * ACTION!!!
+         */
+        if(!this[actionName + 'Action'].call(this, target, args)) {
+            this.currentAction(false);
+            return false;
+        }
+
+
+        //Set repeater
+        this.actionRepeater(actionName, target, args);
+
+        return this;
+    },
+
+    attackAction: function(targetEntityId) {
+        var targetEntity = ige.$(targetEntityId),
+            actionSetting   = this.getUnitSetting('actions', 'attack') || this.getUnitSetting('subActions', 'attack'),
+            dmg = this._caldFinalDmg(actionSetting, targetEntity.getUnitSetting('armor'));
+
+        //Reduce Target's HP
+        targetEntity.addHP( -1*dmg );
+
+        return true;
     },
 
     getUnitSetting: function(settingName, attr, attr2) {
@@ -176,7 +351,7 @@ var BaseEntity = {
     /**
      * Buttons
      */
-    cancelButton: function(pos, selectedEntities, endTile, overEntityId) {
+    cancelButton: function(pos, selectedEntities, target) {
         if(pos==0) {
             this.getCommand().currentButtonAction(false);
             this.getCommand().rebuildActionButtonsBasedOnSelectedEntities();
@@ -197,148 +372,48 @@ var BaseEntity = {
         }
     },
 
-    attackButton: function(pos, selectedEntities, endTile, overEntityId) {
-        if(!endTile) {
+    attackButton: function(pos, selectedEntities, target) {
+        if(!target) {
             //an attack button clicked, set the sub actions:
             this.getCommand().buildEntitiesActionsGrid([this], []);
             return true; //Stop stoppropagation
         }
 
-        if(!overEntityId) {
-            //No units selected, cannot attack
+        if(target.x!=undefined) {
+            //No units selected (position provided), cannot attack
             return true; //Stop stoppropagation
         }
 
-        this.action('attack', [overEntityId]);
+        this.action('attack', target);
     },
 
-    moveButton: function(pos, selectedEntities, endTile) {
-        if(!endTile) {
+    moveButton: function(pos, selectedEntities, target) {
+        if(!target) {
             //a move button clicked, set the sub actions:
             this.getCommand().buildEntitiesActionsGrid([this], []);
             return true; //Stop stoppropagation
         }
 
-        this.action('move', [endTile]);
+        if(target.x==undefined) {
+            //Selected entity provided, get it's position
+            var targetEntity = ige.$(target),
+                targetEntityPosition = targetEntity._translate;
+            if (this._parent.isometricMounts()) {
+                target = this._parent.pointToTile(targetEntityPosition.toIso());
+            } else {
+                target = this._parent.pointToTile(targetEntityPosition);
+            }
+        }
+
+        this.action('move', target);
     },
 
     /**
      * Actions
      */
-    attackAction: function(targetEntityId) {
-        var targetEntity = ige.$(targetEntityId);
 
-        //Check if done attacking
-        if(!targetEntity || targetEntity.alive()===false) {
-            this.currentAction(false);
-            return true;
-        } else if(this.currentAction()!='attack') {
-            return true;
-        }
-
-        var currentPosition = this._translate,
-            targetEntityPosition = targetEntity._translate;
-
-        if (this._parent.isometricMounts()) {
-            currentPosition = this._parent.pointToTile(currentPosition.toIso());
-            targetEntityPosition = this._parent.pointToTile(targetEntityPosition.toIso());
-        } else {
-            currentPosition = this._parent.pointToTile(currentPosition);
-            targetEntityPosition = this._parent.pointToTile(targetEntityPosition);
-        }
-
-
-        //Check the distance between the unit and target
-        var distance = Math.distance(currentPosition.x, currentPosition.y, targetEntityPosition.x, targetEntityPosition.y);
-
-        //Get range
-        var actionSetting   = this.getUnitSetting('actions' ,'attack'),
-            attackRange     = actionSetting.range+ 1,
-            isTargetInRange = attackRange>=distance,
-            moveableUnit    = this.getUnitSetting('actions' ,'move') ? true : false,
-            movementEndPoint;
-
-
-        if(!isTargetInRange && !moveableUnit) {
-            //Target is out of range, and unit cannot move
-            return false;
-        }
-
-        if(!isTargetInRange) {
-            movementEndPoint = this.path.endPoint();
-
-            //Before moving, check if we already on the move
-            if(movementEndPoint==null) {
-                //Unit ISN'T MOVING, get closer to the target
-                this.moveAction(targetEntityPosition);
-
-                //Set repeater
-                this._actionRepeater(actionSetting.cooldown, 'attack', [targetEntityId]);
-
-                return true;
-            } else {
-                //Units IS MOVING, check the distance between the final-destination and the target
-                distance = Math.distance(movementEndPoint.x, movementEndPoint.y, targetEntityPosition.x, targetEntityPosition.y);
-                if(attackRange<distance) {
-
-                    //Destination is wrong, re-calc it
-                    this.moveAction(targetEntityPosition);
-                }
-
-                //Set repeater
-                this._actionRepeater(actionSetting.cooldown, 'attack', [targetEntityId]);
-                return true;
-            }
-        }
-
-
-        //Target in IN RANGE
-        if(moveableUnit) {
-            //Stop moving
-            this.moveStopAction();
-        }
-
-
-        var currentTime = new Date().getTime();
-        if(currentTime <= (actionSetting['lastUsageTime'] + actionSetting.cooldown*1000)) {
-            //Cool down still active
-
-            //Set repeater
-            this._actionRepeater( ((actionSetting['lastUsageTime'] + actionSetting.cooldown*1000) - currentTime) / 1000 , 'attack', [targetEntityId]);
-
-            return false;
-        }
-
-        /**
-         * Attack!!!
-         */
-            //Set cooldown
-        this.setUnitSetting('actions', 'attack', 'lastUsageTime', currentTime);
-
-        //Reduce Target's HP
-        var dmg = this._caldFinalDmg(actionSetting, targetEntity.getUnitSetting('armor'));
-        targetEntity.addHP( -1*dmg );
-
-        //Set repeater
-        this._actionRepeater(actionSetting.cooldown, 'attack', [targetEntityId]);
-
-        return this;
-    },
     attackStopAction: function(targetEntityId) {
         this.currentAction(false);
-    },
-
-    tick: function (ctx) {
-        if(this.repeaterAction && this.currentAction()==this.repeaterAction) {
-            this.action(this.repeaterAction, this.repeaterArgs);
-        }
-
-        CharacterContainer.prototype.tick.call(this, ctx);
-    },
-
-    _actionRepeater: function(timeInterval, actionName, args) {
-        this.repeaterAction = actionName;
-        this.repeaterArgs = args;
     },
 
     _caldFinalDmg: function(attack, armor) {
@@ -367,11 +442,9 @@ var BaseEntity = {
     /**
      * Move entity
      * @param endTile
-     * @param onEvent
-     * @param onEventCallback
      * @returns {boolean}
      */
-    moveAction: function (endTile, onEvent, onEventCallback) {
+    moveAction: function (endTile/*, onEvent, onEventCallback*/) {
         // Get the tile co-ordinates that the mouse is currently over
         var currentPosition = this._translate,
             startTile,
@@ -426,10 +499,10 @@ var BaseEntity = {
                 });
         }
 
-        if(onEvent && onEventCallback) {
+       /* if(onEvent && onEventCallback) {
             this
                 .path.on(onEvent, onEventCallback, this);
-        }
+        }*/
 
         this
             .path.start()
@@ -439,6 +512,6 @@ var BaseEntity = {
         this.path.clear();
         this.path.stop();
     }
-};
+});
 
 if (typeof(module) !== 'undefined' && typeof(module.exports) !== 'undefined') { module.exports = BaseEntity; }
