@@ -244,15 +244,9 @@ var CommandComponent = IgeEventingClass.extend({
      * @param target
      */
     triggerButtonAction: function(currentButtonAction, selectedEntities, target) {
-        if(!args) {
-            args = [];
-        }
-        args.unshift(0);
-        args.unshift(selectedEntities);
         currentButtonAction = currentButtonAction + 'Button';
-        for(var i in selectedEntities) {
-            args[0] = i;
-            if(selectedEntities[i][currentButtonAction].call(selectedEntities[i], target)) {
+        for(var pos in selectedEntities) {
+            if(selectedEntities[pos][currentButtonAction].call(selectedEntities[pos], pos, selectedEntities, target)) {
                 //User asked to stop button
                 return true;
             }

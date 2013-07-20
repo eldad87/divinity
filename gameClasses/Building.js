@@ -10,7 +10,7 @@ var Building = BaseEntity.extend({
      * @param mana
      */
     init: function (actions, subActions, armor, hp, mana) {
-        BaseEntity.prototype.init.call(this);
+        BaseEntity.prototype.init.call(this, actions, subActions, armor, hp, mana);
     },
 
     layerData: function(isOnDirt, isOnEntity) {
