@@ -13,7 +13,21 @@ var Building = BaseEntity.extend({
         BaseEntity.prototype.init.call(this, actions, subActions, armor, hp, mana);
     },
 
-    layerData: function(isOnDirt, isOnEntity) {
+    isOnDirt: function() {
+        return ige.$('DirtLayer').map.collision( this.data('tileX'), this.data('tileY'),
+                                                    this.data('tileWidth'), this.data('tileHeight') );
+    },
+
+    isOnEntity: function() {
+        // Check the tile is not currently occupied!
+        return this.parent().map.collision( this.data('tileX'), this.data('tileY'),
+                                                    this.data('tileWidth'), this.data('tileHeight') );
+    },
+
+    changeOpacityBasedOnTopography: function() {
+        var isOnDirt =  this.isOnDirt(),
+            isOnEntity = this.isOnEntity();
+
         if(isOnDirt && isOnEntity) {
             this.opacity(0.1);
         } else if(isOnDirt || isOnEntity) {

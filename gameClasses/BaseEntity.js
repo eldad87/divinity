@@ -137,6 +137,11 @@ var BaseEntity = IgeEntityBox2d.extend({
             throw new EventException('Invalid entity action is used');
         }
 
+        if(ige.isServer && target.push!=undefined) {
+            //Convert array back into Position
+            target = new IgePoint(target[0], target[1], target[2], target[3]);
+        }
+
         this.currentAction(actionName);
         if(actionSettings.isRepeatable) {
             //TODO: exception, cant have NO args.
@@ -147,6 +152,11 @@ var BaseEntity = IgeEntityBox2d.extend({
         }
 
         if(!ige.isServer) {
+            //Convert Position into array
+            if(target.x!=undefined) {
+                target = [target.x, target.y, target.z, target._floor];
+            }
+
             //Send action to server
             ige.network.send('action', [this.id(), actionName, target, args]);
         }
@@ -171,16 +181,19 @@ var BaseEntity = IgeEntityBox2d.extend({
             }
 
             targetPosition = targetEntity._translate;
+            if (this._parent.isometricMounts()) {
+                targetPosition = this._parent.pointToTile(targetPosition.toIso());
+            } else {
+                targetPosition = this._parent.pointToTile(targetPosition);
+            }
         }
 
 
         var currentPosition = this._translate;
         if (this._parent.isometricMounts()) {
             currentPosition = this._parent.pointToTile(currentPosition.toIso());
-            targetPosition = this._parent.pointToTile(targetPosition.toIso());
         } else {
             currentPosition = this._parent.pointToTile(currentPosition);
-            targetPosition = this._parent.pointToTile(targetPosition);
         }
 
 
@@ -396,16 +409,18 @@ var BaseEntity = IgeEntityBox2d.extend({
 
         if(target.x==undefined) {
             //Selected entity provided, get it's position
-            var targetEntity = ige.$(target),
-                targetEntityPosition = targetEntity._translate;
-            if (this._parent.isometricMounts()) {
-                target = this._parent.pointToTile(targetEntityPosition.toIso());
-            } else {
-                target = this._parent.pointToTile(targetEntityPosition);
-            }
+            target = target._translate;
         }
 
         this.action('move', target);
+    },
+    _getEntityIdToTile: function(entity) {
+        var targetEntity = ige.$(target),
+            targetEntityPosition = targetEntity._translate;
+        if (this._parent.isometricMounts()) {
+            return this._parent.pointToTile(targetEntityPosition.toIso());
+        }
+        return this._parent.pointToTile(targetEntityPosition);
     },
 
     /**

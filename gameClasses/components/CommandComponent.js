@@ -403,10 +403,10 @@ var CommandComponent = IgeEventingClass.extend({
 		}
     },
 
-    cursorItem: function(item) {
+    cursorItem: function(item, keepItem) {
         if(item!=undefined) {
             //Check if we already have a cursor item
-            if(ige.client.data('cursorItem')) {
+            if(ige.client.data('cursorItem') && !keepItem) {
                 //Destroy it
                 ige.client.data('cursorItem').destroy();
             }
@@ -429,21 +429,11 @@ var CommandComponent = IgeEventingClass.extend({
             // We have a ghost item so move it to where the  mouse is!
             var mousePos = this._options.client.objectLayer.mouseToTile().clone();
 
-            // Check if mouse is on dirt
-            var isOnDirt =  ige.$('DirtLayer').map.collision(mousePos.x, mousePos.y,
-                                this.cursorItem().data('tileWidth'), this.cursorItem().data('tileHeight')),
-                // Check the tile is not currently occupied!
-                isOnEntity = ige.$('objectLayer').map.collision(mousePos.x, mousePos.y,
-                                this.cursorItem().data('tileWidth'), this.cursorItem().data('tileHeight'));
-
             this.cursorItem()
                     .data('tileX', mousePos.x)
                     .data('tileY', mousePos.y)
                     .translateToTile(mousePos.x + 0.5, mousePos.y + 0.5, 0)
-                    .layerData(
-                        isOnDirt,
-                        isOnEntity
-                    );
+                    .changeOpacityBasedOnTopography();
         }
     },
 
@@ -468,11 +458,6 @@ var CommandComponent = IgeEventingClass.extend({
         //Trigger an action using the selected button
         if(currentButtonAction &&
             (currentButtonAction!='build')) {
-            /*if(overEntity) {
-                this.triggerButtonAction(currentButtonAction, selectedEntities, endTile, overEntity.id());
-            } else {
-                this.triggerButtonAction(currentButtonAction, selectedEntities, endTile);
-            }*/
             this.triggerButtonAction(currentButtonAction, selectedEntities, (endTile || overEntity.id()) );
 
             return true;
