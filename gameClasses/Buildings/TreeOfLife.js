@@ -1,33 +1,46 @@
 var TreeOfLife = Building.extend({
     classId: 'TreeOfLife',
-    init: function (parent, tileX, tileY) {
+
+    init: function (parent) {
+
+        var tileWidth = 2,
+            tileHeight = 2;
+        this.data('tileWidth', tileWidth);
+        this.data('tileHeight', tileHeight);
+
         Building.prototype.init.call(
             this,
             {},
             {},
             {type: armor.fortified, amount: 1},
-            {max: 420.0, current: 420.0},
+            {max: 420.0, current: 1.0},
             {max: 0.0, current: 0.0}
         );
 
-
-        // Setup the 3d bounds container (this), width:2, height:2
         this.isometric(true)
-            .mount(parent)
-            .size3d(2 * parent._tileWidth, 2 * parent._tileHeight, parent._tileHeight * 1.25)
-            .translateToTile((tileX) + 0.5, (tileY) + 0.5, 0)
             .drawBounds(false)
-            .drawBoundsData(false)
-            .occupyTile(tileX, tileY, 2, 2);
+            .drawBoundsData(false);
 
-        // Create the "image" entity
-        this.imageEntity = new IgeEntity()
-            .texture(ige.client.gameTexture.treeOfLife)
-            .dimensionsFromCell()
-            .scaleTo(0.3, 0.3, 1)
-            .drawBounds(false)
-            .drawBoundsData(false)
-            .mount(this);
+        /* CEXCLUDE */
+        if (ige.isServer) {
+            this.streamMode(1)
+                .mount(parent)
+                // Setup the 3d bounds container (this)
+                .size3d(tileWidth * parent._tileWidth, tileHeight * parent._tileHeight, parent._tileHeight * 1.25)
+            //TODO setup 3D bounds
+        }
+        /* CEXCLUDE */
+
+        if (!ige.isServer) {
+            // Create the "image" entity
+            this.imageEntity = new IgeEntity()
+                .texture(ige.client.gameTexture.treeOfLife)
+                .dimensionsFromCell()
+                .scaleTo(0.3, 0.3, 1)
+                .drawBounds(false)
+                .drawBoundsData(false)
+                .mount(this);
+        }
     }
 });
 

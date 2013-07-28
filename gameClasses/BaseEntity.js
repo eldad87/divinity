@@ -8,18 +8,20 @@ var BaseEntity = IgeEntityBox2d.extend({
      * @param armor
      * @param hp
      * @param mana
+     * @param custom
      */
-    init: function (actions, subActions, armor, hp, mana) {
+    init: function (actions, subActions, armor, hp, mana, custom) {
+        if(custom==undefined) {
+            custom = {};
+        }
         //this.implement(BaseEntity);
 
         IgeEntityBox2d.prototype.init.call(this);
 
         this._currentAction = false;
 
-        this.unitSettings(actions, subActions, armor, hp, mana);
-        if(!ige.isServer) {
-            this.renderHP();
-        }
+        this.unitSettings(actions, subActions, armor, hp, mana, custom);
+
         this.addComponent(ControlComponent);
         this.streamSections(['transform', 'unit']);
     },
@@ -79,7 +81,7 @@ var BaseEntity = IgeEntityBox2d.extend({
                 if (data) {
                     // We have been given new data!
                     data = JSON.parse(data);
-                    this.unitSettings(data.actions, data.subActions, data.armor, data.healthPoints, data.manaPoints);
+                    this.unitSettings(data.actions, data.subActions, data.armor, data.healthPoints, data.manaPoints, data.custom);
                 }
             }
             /* CEXCLUDE */
@@ -143,13 +145,15 @@ var BaseEntity = IgeEntityBox2d.extend({
         }
 
         this.currentAction(actionName);
-        if(actionSettings.isRepeatable) {
-            //TODO: exception, cant have NO args.
-            this._repeatableAction(actionName, target, args);
-        } else {
-            args = args || [];
-            this[actionName + 'Action'].call(this, target, args);
-        }
+        //if(ige.isServer) {
+            if(actionSettings.isRepeatable) {
+                //TODO: exception, cant have NO args.
+                this._repeatableAction(actionName, target, args);
+            } else {
+                args = args || [];
+                this[actionName + 'Action'].call(this, target, args);
+            }
+        //}
 
         if(!ige.isServer) {
             //Convert Position into array
@@ -296,60 +300,84 @@ var BaseEntity = IgeEntityBox2d.extend({
     },
 
     getUnitSetting: function(settingName, attr, attr2) {
-        if(settingName!=undefined &&
-            attr!=undefined &&
-            attr2!=undefined) {
+        /*if(this._unitSettings==undefined) {
+            return undefined;
+        }*/
 
-            if(this._unitSettings[settingName][attr][attr2]==undefined) {
-                return undefined;
+        try {
+            if(settingName!=undefined &&
+                attr!=undefined &&
+                attr2!=undefined) {
+
+                if(this._unitSettings[settingName][attr][attr2]==undefined) {
+                    return undefined;
+                }
+
+                return this._unitSettings[settingName][attr][attr2];
+            } else if(settingName!=undefined &&
+                attr!=undefined) {
+
+                if(this._unitSettings[settingName][attr]==undefined) {
+                    return undefined;
+                }
+
+                return this._unitSettings[settingName][attr];
+            } else if(settingName!=undefined) {
+
+                if(this._unitSettings[settingName]==undefined) {
+                    return undefined;
+                }
+
+                return this._unitSettings[settingName];
             }
-
-            return this._unitSettings[settingName][attr][attr2];
-        } else if(settingName!=undefined &&
-            attr!=undefined) {
-
-            if(this._unitSettings[settingName][attr]==undefined) {
-                return undefined;
-            }
-
-            return this._unitSettings[settingName][attr];
-        } else if(settingName!=undefined) {
-
-            if(this._unitSettings[settingName]==undefined) {
-                return undefined;
-            }
-
-            return this._unitSettings[settingName];
+        } catch(e) {
+            return undefined;
         }
 
         return this._unitSettings;
     },
 
     setUnitSetting: function(settingName, attr, attr2, attr3) {
-        if(attr3!=undefined) {
-            return this._unitSettings[settingName][attr][attr2] = attr3;
-        } else if(attr2!=undefined) {
-            return this._unitSettings[settingName][attr] = attr2;
-        } else if(attr!=undefined) {
-            return this._unitSettings[settingName] = attr;
-        } else if(settingName!=undefined) {
+        if(settingName!=undefined) {
+            if(attr!=undefined) {
+                if(this._unitSettings[settingName]==undefined) {
+                    this._unitSettings[settingName] = {};
+                }
+
+                if(attr2!=undefined) {
+                    if(this._unitSettings[settingName][attr]==undefined) {
+                        this._unitSettings[settingName][attr] = {};
+                    }
+
+                    if(attr3!=undefined) {
+                        if(this._unitSettings[settingName][attr][attr2]==undefined) {
+                            this._unitSettings[settingName][attr][attr2] = {};
+                        }
+
+                        return this._unitSettings[settingName][attr][attr2] = attr3;
+                    }
+                    return this._unitSettings[settingName][attr] = attr2;
+                }
+                return this._unitSettings[settingName] = attr;
+            }
             return this._unitSettings = settingName;
         }
 
         return this;
     },
 
-    unitSettings: function(actions, subActions, armor, hp, mana) {
+    unitSettings: function(actions, subActions, armor, hp, mana, custom) {
         if (    actions !== undefined   && subActions   !== undefined   &&
-            armor   !== undefined   &&  hp          != undefined  &&
-            mana    !== undefined )
+                armor   !== undefined   && hp           !== undefined  &&
+                mana    !== undefined   && custom       !== undefined)
         {
             this._unitSettings = {};
-            this._unitSettings.actions       = actions;
-            this._unitSettings.subActions    = subActions;
-            this._unitSettings.armor         = armor;
-            this._unitSettings.healthPoints  = hp;
-            this._unitSettings.manaPoints    = mana;
+            this._unitSettings.actions      = actions;
+            this._unitSettings.subActions   = subActions;
+            this._unitSettings.armor        = armor;
+            this._unitSettings.healthPoints = hp;
+            this._unitSettings.manaPoints   = mana;
+            this._unitSettings.custom       = custom;
 
             return this;
         }

@@ -458,6 +458,11 @@ var CommandComponent = IgeEventingClass.extend({
         //Trigger an action using the selected button
         if(currentButtonAction &&
             (currentButtonAction!='build')) {
+            /*if(overEntity) {
+                this.triggerButtonAction(currentButtonAction, selectedEntities, endTile, overEntity.id());
+            } else {
+                this.triggerButtonAction(currentButtonAction, selectedEntities, endTile);
+            }*/
             this.triggerButtonAction(currentButtonAction, selectedEntities, (endTile || overEntity.id()) );
 
             return true;
