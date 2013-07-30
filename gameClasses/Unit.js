@@ -6,10 +6,6 @@ var Unit = BaseEntity.extend({
         var self = this;
         BaseEntity.prototype.init.call(this, actions, subActions, armor, hp, mana);
 
-        if(!ige.isServer) {
-            this.renderHP();
-        }
-
         /* CEXCLUDE */
         if (ige.isServer) {
             // Set bounding box

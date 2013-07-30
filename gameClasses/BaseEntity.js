@@ -22,6 +22,10 @@ var BaseEntity = IgeEntityBox2d.extend({
 
         this.unitSettings(actions, subActions, armor, hp, mana, custom);
 
+        if(!ige.isServer) {
+            this.renderHP();
+        }
+
         this.addComponent(ControlComponent);
         this.streamSections(['transform', 'unit']);
     },

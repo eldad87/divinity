@@ -39,7 +39,7 @@ var Wisp = Unit.extend({
         /* CEXCLUDE */
         if (ige.isServer) {
             //Check if item already exists
-            if(targetBuildingId==undefined) {
+            if(!targetBuildingId) {
                 //Add building
                 var building = new igeClassStore[args[0]](this.parent(), target.x, target.y);
                     building
@@ -60,7 +60,7 @@ var Wisp = Unit.extend({
 
         if (!ige.isServer) {
             //Check if client received the new building
-            if(targetBuildingId==undefined) {
+            if(!targetBuildingId) {
                 return true; //Not yet
             }
         }
@@ -81,7 +81,6 @@ var Wisp = Unit.extend({
         if (!ige.isServer) {
             if(currentBuildingProgress==actionSetting.progress) {
                 //first time, just received from the server - set hp/progress bars
-                targetBuildingEntity.renderHP();
                 targetBuildingEntity.renderBuildingProgress();
 
                 //Building opacity
@@ -100,6 +99,10 @@ var Wisp = Unit.extend({
         if(currentBuildingProgress>=targetBuildingEntity.getUnitSetting('healthPoints', 'max')) {
             ige.log('building DONE...')
 
+            //Clear custom data
+            this.setUnitSetting('custom', 'buildGeneric', 'entityId', false);
+            targetBuildingEntity.setUnitSetting('custom', 'buildingProgress', 0)
+
             /* CEXCLUDE */
             if (ige.isServer) {
 //TODO: mount wisp - closest to the building
@@ -116,6 +119,9 @@ var Wisp = Unit.extend({
                 //Remove progress bar
                 ige.$(targetBuildingId + '_building_progress').destroy()
             }
+
+            //Clear custom data
+
             return false
         }
 
@@ -126,6 +132,9 @@ var Wisp = Unit.extend({
         if(!target) { //Click on button (NOT on the map)
             //set cursor with building
             var tempItem = new buildingClass( this.parent(), -1000, -1000);
+            //Remove HP bar
+            ige.$(tempItem.id() + '_hp').destroy();
+
             tempItem.mount(this.parent());
 
             this.getCommand().cursorItem(tempItem);
