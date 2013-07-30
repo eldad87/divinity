@@ -150,6 +150,26 @@ var CommandComponent = IgeEventingClass.extend({
         return this.buildEntitiesActionsGrid(selectedEntities, sharedActions);
     },
 
+    removeEntityFromSelected: function(entityId) {
+        var selecteEntities = this.selectedEntities();
+        if(!selecteEntities.length) {
+            return this;
+        }
+
+        //Find entity
+        for(var i in selecteEntities) {
+            if(selecteEntities[i].id()==entityId) {
+                //Remove entity
+                selecteEntities.splice(i, 1);
+                //Set new selected
+                this.selectedEntities(selecteEntities);
+                break;
+            }
+        }
+
+        return this;
+    },
+
     /**
      * Build actions and onclick, trigger the actions on the given entities
      */
@@ -176,7 +196,7 @@ var CommandComponent = IgeEventingClass.extend({
             }
         }
 
-        if(!entities) {
+        if(entities==undefined || !entities.length) {
             return true;
         }
 

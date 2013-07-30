@@ -30,7 +30,8 @@ var Wisp = Unit.extend({
      */
     buildGenericAction: function(target, args) {
         if (!ige.isServer) {
-//TODO: remove wisp-entity from Command selected
+            //Remove wisp-entity from Command selected
+            this.getCommand().removeEntityFromSelected(this.id());
         }
 
         var targetBuildingId = this.getUnitSetting('custom', 'buildGeneric', 'entityId');
