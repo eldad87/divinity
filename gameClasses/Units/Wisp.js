@@ -46,6 +46,7 @@ var Wisp = Unit.extend({
                         .data('tileX', target.x)
                         .data('tileY', target.y)
                         .translateToTile(target.x + 0.5, target.y + 0.5, 0)
+                    building.place();
 
                 targetBuildingId = building.id();
                 this.setUnitSetting('custom', 'buildGeneric', 'entityId', targetBuildingId);

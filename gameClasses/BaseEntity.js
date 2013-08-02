@@ -125,6 +125,7 @@ var BaseEntity = IgeEntityBox2d.extend({
     currentAction: function(val) {
         if (val !== undefined) {
             this._currentAction = val;
+            ige.log('currentAction: ' + val);
             return this;
         }
 
@@ -498,6 +499,11 @@ var BaseEntity = IgeEntityBox2d.extend({
             moveSetting = this.getUnitSetting('actions' ,'move'),
 
             tileChecker = function (tileData, tileX, tileY) {
+                //Check if the map we're on, the tile is occupy by a building
+                if(self.parent().isTileOccupied( tileX, tileY )) {
+                    return false;
+                }
+
                 // If the map tile data is set, don't path along it
                 return !tileData;
             };
