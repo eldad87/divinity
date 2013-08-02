@@ -16,7 +16,7 @@ var Building = BaseEntity.extend({
         if (ige.isServer) {
             // Set bounding box
             this.box2dBody({
-                type: 'dynamic',
+                type: 'static',
                 linearDamping: 0.0,
                 angularDamping: 0.1,
                 allowSleep: true,

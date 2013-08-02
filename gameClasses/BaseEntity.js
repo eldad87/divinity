@@ -149,15 +149,13 @@ var BaseEntity = IgeEntityBox2d.extend({
         }
 
         this.currentAction(actionName);
-        //if(ige.isServer) {
-            if(actionSettings.isRepeatable) {
-                //TODO: exception, cant have NO args.
-                this._repeatableAction(actionName, target, args);
-            } else {
-                args = args || [];
-                this[actionName + 'Action'].call(this, target, args);
-            }
-        //}
+        if(actionSettings.isRepeatable) {
+            //TODO: exception, cant have NO args.
+            this._repeatableAction(actionName, target, args);
+        } else {
+            args = args || [];
+            this[actionName + 'Action'].call(this, target, args);
+        }
 
         if(!ige.isServer) {
             //Convert Position into array
