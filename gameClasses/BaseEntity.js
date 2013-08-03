@@ -34,7 +34,7 @@ var BaseEntity = IgeEntityBox2d.extend({
 
     tick: function (ctx) {
         if(this.repeaterAction && this.currentAction()==this.repeaterAction) {
-            this.action(this.repeaterAction, this.repeaterTarget, this.repeaterArgs);
+            this._repeatableAction(this.repeaterAction, this.repeaterTarget, this.repeaterArgs);
         }
 
         IgeEntityBox2d.prototype.tick.call(this, ctx);
@@ -125,7 +125,6 @@ var BaseEntity = IgeEntityBox2d.extend({
     currentAction: function(val) {
         if (val !== undefined) {
             this._currentAction = val;
-            ige.log('currentAction: ' + val);
             return this;
         }
 
@@ -163,6 +162,13 @@ var BaseEntity = IgeEntityBox2d.extend({
             if(target.x!=undefined) {
                 target = [target.x, target.y, target.z, target._floor];
             }
+            var actionSignature = [this.id(), actionName, target, args];
+
+            //Check is this action already sent to the server
+            if(this.lastActionSent != undefined && this.lastActionSent.theSameAs(actionSignature)) {
+                return true;
+            }
+            this.lastActionSent = actionSignature;
 
             //Send action to server
             ige.network.send('action', [this.id(), actionName, target, args]);
