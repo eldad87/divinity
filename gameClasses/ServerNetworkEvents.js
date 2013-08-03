@@ -25,15 +25,23 @@ var ServerNetworkEvents = {
 
 	_onPlayerEntity: function (data, clientId) {
 		if (!ige.server.players[clientId]) {
-			ige.server.players[clientId] = new Wisp(clientId)
-				// .addComponent(PlayerComponent)
+			ige.server.players[clientId] = new Wisp(clientId);
+            ServerNetworkEvents.notifyClientOnHisNewEntity(ige.server.players[clientId].id(), clientId);
+
+            ige.server.players[clientId]
 				.streamMode(1)
 				.mount(ige.server.objectLayer);
-
-			// Tell the client to track their player entity
-			ige.network.send('playerEntity', ige.server.players[clientId].id(), clientId);
 		}
 	},
+
+    /**
+     * Tell the client to track their player entity
+     * @param entityId
+     * @param clientId
+     */
+    notifyClientOnHisNewEntity: function(entityId, clientId) {
+        ige.network.send('playerEntity', entityId, clientId);
+    },
 
     /**
      *
@@ -43,7 +51,7 @@ var ServerNetworkEvents = {
      */
     _onAction: function (data, clientId) {
         ige.$(data[0]).
-            action(data[1], data[2], data[3]);
+            action(data[1], data[2], data[3], clientId);
     }
 
 };

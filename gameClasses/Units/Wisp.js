@@ -28,7 +28,7 @@ var Wisp = Unit.extend({
     /**
      * Actions
      */
-    buildGenericAction: function(target, args) {
+    buildGenericAction: function(target, args, clientId) {
         if (!ige.isServer) {
             //Remove wisp-entity from Command selected
             this.getCommand().removeEntityFromSelected(this.id());
@@ -42,6 +42,9 @@ var Wisp = Unit.extend({
             if(!targetBuildingId) {
                 //Add building
                 var building = new igeClassStore[args[0]](this.parent(), target.x, target.y);
+                    ServerNetworkEvents.notifyClientOnHisNewEntity(building.id(), clientId); //Tell client that this is
+                    building.streamMode(1);
+
                     building
                         .data('tileX', target.x)
                         .data('tileY', target.y)

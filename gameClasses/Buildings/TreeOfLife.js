@@ -23,8 +23,7 @@ var TreeOfLife = Building.extend({
 
         /* CEXCLUDE */
         if (ige.isServer) {
-            this.streamMode(1)
-                .mount(parent)
+            this.mount(parent)
                 // Setup the 3d bounds container (this)
                 .size3d(tileWidth * parent._tileWidth, tileHeight * parent._tileHeight, parent._tileHeight * 1.25)
             //TODO setup 3D bounds

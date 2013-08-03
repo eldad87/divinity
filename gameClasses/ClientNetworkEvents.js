@@ -23,6 +23,11 @@ var ClientNetworkEvents = {
 		}
 	},
 
+    /**
+     * Every time a new entity is created by the server
+     * @param entity
+     * @private
+     */
     _onEntityCreated: function(entity) {
         var isOwner = ClientNetworkEvents._playerEntities.indexOf(entity.id());
         if(isOwner!==-1) {
