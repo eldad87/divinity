@@ -593,6 +593,21 @@ var BaseEntity = IgeEntityCannon.extend({
     moveStopAction: function() {
         this.path.clear();
         this.path.stop();
+        this.currentAction(false);
+    },
+
+    continueBuildGenericStopAction: function() {
+        this.buildGenericStopAction();
+    },
+
+    continueBuildGenericAction: function(target,  args, clientId) {
+        this.setUnitSetting('custom', 'buildGeneric', 'entityId', target.id());
+        this.buildGenericAction();
+    },
+
+    buildGenericStopAction: function() {
+        this.setUnitSetting('custom', 'buildGeneric', 'entityId', false);
+        this.currentAction(false);
     },
 
     continueBuildGenericStopAction: function() {
