@@ -31,7 +31,7 @@ var ControlComponent = IgeClass.extend({
             };
 
         this._entity
-            .mouseOver(overFunc)
+            .mouseOver(overFunc, true)
             .mouseOut(outFunc);
 
         return this._entity;

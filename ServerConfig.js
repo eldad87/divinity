@@ -14,7 +14,8 @@ var config = {
         {name: 'Wisp', path: './gameClasses/Units/Wisp'},
         {name: 'Building', path: './gameClasses/Building'},
         {name: 'TreeOfLife', path: './gameClasses/Buildings/TreeOfLife'},
-		{name: 'tiledExample1', path: './maps/example'}
+		{name: 'tiledExample1', path: './maps/example'},
+		{name: 'CANNON', path: '../ige/engine/components/physics/cannon/lib_cannon'}
 		//{name: 'EntityOccupyPositionComponent', path: './gameClasses/EntityOccupyPositionComponent'}
 	]
 };

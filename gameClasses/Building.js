@@ -15,7 +15,7 @@ var Building = BaseEntity.extend({
         /* CEXCLUDE */
         if (ige.isServer) {
             // Set bounding box
-            this.box2dBody({
+            /*this.box2dBody({
                 type: 'static',
                 linearDamping: 0.0,
                 angularDamping: 0.1,
@@ -28,12 +28,25 @@ var Building = BaseEntity.extend({
                     friction: 0.5,
                     restitution: 0.2,
                     shape: {
-                        type: 'circle'
+                        type: 'box'
+                    }
+                }]
+            });*/
+            this.cannonBody({
+                type: 'static',
+                mass: 0,
+                fixtures: [{
+                    shape: {
+                        type: 'box'
                     }
                 }]
             });
         }
         /* CEXCLUDE */
+    },
+
+    _getMountedTextureEntity: function() {
+        return this.imageEntity;
     },
 
     isOnDirt: function() {

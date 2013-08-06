@@ -26,6 +26,7 @@ var ServerNetworkEvents = {
 	_onPlayerEntity: function (data, clientId) {
 		if (!ige.server.players[clientId]) {
 			ige.server.players[clientId] = new Wisp(clientId);
+            ige.server.players[clientId].translateTo(0,0,0);
             ServerNetworkEvents.notifyClientOnHisNewEntity(ige.server.players[clientId].id(), clientId);
 
             ige.server.players[clientId]

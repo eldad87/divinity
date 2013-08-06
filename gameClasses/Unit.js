@@ -5,11 +5,14 @@ var Unit = BaseEntity.extend({
     init: function (actions, subActions, armor, hp, mana, animationType) {
         var self = this;
         BaseEntity.prototype.init.call(this, actions, subActions, armor, hp, mana);
+        this.addComponent(IgeVelocityComponent);
+
+        // Setup the entity 3d bounds
+        this.size3d(20, 20, 40);
 
         /* CEXCLUDE */
         if (ige.isServer) {
-            // Set bounding box
-            self.box2dBody({
+            /*self.box2dBody({
                 type: 'dynamic',
                 linearDamping: 0.0,
                 angularDamping: 0.1,
@@ -25,12 +28,25 @@ var Unit = BaseEntity.extend({
                         type: 'circle'
                     }
                 }]
+            });*/
+
+            self.cannonBody({
+                type: 'dynamic',
+                mass: 1,
+                angularDamping: 1.0,
+                linearDamping: 0.05,
+                allowSleep: true,
+                sleepSpeedLimit: 0.1,
+                sleepTimeLimit: 1000,
+                fixtures: [{
+                    shape: {
+                        type: 'box'
+                    }
+                }]
             });
         }
         /* CEXCLUDE */
 
-        // Setup the entity 3d bounds
-        self.size3d(20, 20, 40);
 
         if (!ige.isServer) {
             // Create a character entity as a child of this container
@@ -59,6 +75,10 @@ var Unit = BaseEntity.extend({
 
         // Define the data sections that will be included in the stream
         this.streamSections(['transform', 'unit', 'direction']);
+    },
+
+    _getMountedTextureEntity: function() {
+        return this.character;
     },
 
     /**

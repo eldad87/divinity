@@ -80,7 +80,18 @@ var CommandComponent = IgeEventingClass.extend({
             .id('uiCommandBottomBG')
             .depth(10)
             .width(1600)
+            .mouseOver(function(event){
+                if(ige.client.data('cursorMode')) {
+                    return true; //Someone else is using the mouse
+                }
+                ige.client.data('cursorMode', 'UICommand');
+
+                ige.log('UICommand over');
+            }, true)
             .mouseDown(function(event) {
+                if(!this.mouseOver()) {
+                    return true; //Not on the current texture
+                }
                 if(ige.client.data('cursorMode')) {
                     return true; //Someone else is using the mouse
                 }
@@ -472,7 +483,7 @@ var CommandComponent = IgeEventingClass.extend({
         var currentButtonAction = this.currentButtonAction(),
             overEntity = this.entityOver(),
             selectedEntities = this.selectedEntities(),
-            sharedActions = this._getSharedActionsForEntitiers(selectedEntities)
+            sharedActions = this._getSharedActionsForEntitiers(selectedEntities),
             endTile = this._options.client.objectLayer.pointToTile(this._mouseEnd);
 
         //Trigger an action using the selected button

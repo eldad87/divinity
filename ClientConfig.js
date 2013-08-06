@@ -27,6 +27,7 @@ var igeClientConfig = {
         './gameClasses/components/PlayerComponent.js',
         './gameClasses/CharacterAi.js',
         '../ige/engine/ui/IgeUiGridPanel.js',
+        '../ige/engine/components/physics/cannon/lib_cannon.js',
 
 		/* Standard game scripts */
 		'./client.js',

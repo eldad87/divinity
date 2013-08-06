@@ -235,11 +235,6 @@ var BaseEntity = IgeEntityBox2d.extend({
             if(movementEndPoint==null) {
                 //Unit ISN'T MOVING, get closer to the target
                 this.moveAction(targetPosition);
-
-                //Set repeater
-                this.actionRepeater(actionName, target, args);
-
-                return true;
             } else {
                 //Units IS MOVING, check the distance between the final-destination and the target
                 distance = Math.distance(movementEndPoint.x, movementEndPoint.y, targetPosition.x, targetPosition.y);
@@ -248,11 +243,11 @@ var BaseEntity = IgeEntityBox2d.extend({
                     //Destination is wrong, re-calc it
                     this.moveAction(targetPosition);
                 }
-
-                //Set repeater
-                this.actionRepeater(actionName, target, args);
-                return true;
             }
+
+            //Set repeater
+            this.actionRepeater(actionName, target, args);
+            return true;
         }
 
 
@@ -505,13 +500,22 @@ var BaseEntity = IgeEntityBox2d.extend({
             moveSetting = this.getUnitSetting('actions' ,'move'),
 
             tileChecker = function (tileData, tileX, tileY) {
-                //Check if the map we're on, the tile is occupy by a building
-                if(self.parent().isTileOccupied( tileX, tileY )) {
+                /* CEXCLUDE */
+                //Check if the map is occupy by a building
+                /** can couse problems if final-tile is already occupied
+                if (ige.isServer) {
+                    if( self.parent().isTileOccupied( tileX, tileY )) {
+                        return false;
+                    }
+                }*/
+                /* CEXCLUDE */
+
+                //If the map tile data is set, don't path along it
+                if(tileData) {
                     return false;
                 }
 
-                // If the map tile data is set, don't path along it
-                return !tileData;
+                return true;
             };
 
         // Calculate which tile our character is currently "over"

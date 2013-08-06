@@ -11,12 +11,15 @@ var Client = IgeClass.extend({
 		// Enabled texture smoothing when scaling textures
 		ige.globalSmoothing(true);
 
-        // Add physics and setup physics world
+        /*// Add physics and setup physics world
         ige.addComponent(IgeBox2dComponent)
             .box2d.sleep(true)
             .box2d.gravity(0, 0)
             .box2d.createWorld()
-            .box2d.start();
+            .box2d.start();*/
+        ige.addComponent(IgeCannonComponent)
+            .cannon.gravity(0, 0, -600)
+            .cannon.createWorld();
 
 
         // Enable networking
@@ -37,6 +40,9 @@ var Client = IgeClass.extend({
             ige.start(function (success) {
                 // Check if the engine started successfully
                 if (success) {
+
+                    // Create the physics world "ground"
+                    ige.cannon.createFloor(0, 0, 1);
 
                     ige.network.start('http://localhost:2000', function () {
                         // Setup the network command listeners
@@ -94,7 +100,7 @@ var Client = IgeClass.extend({
 
 
                 //Collision
-                ige.box2d.staticsFromMap(layersById.DirtLayer);
+                //ige.box2d.staticsFromMap(layersById.DirtLayer);
 
                 // Create a path-finder
                 self.pathFinder = new IgePathFinder()
