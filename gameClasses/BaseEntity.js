@@ -139,6 +139,10 @@ var BaseEntity = IgeEntityCannon.extend({
         var actionSettings = this.getUnitSetting('actions', actionName) ||
                         this.getUnitSetting('subActions', actionName);
 
+        if(actionName=='defaultStop') {
+            actionSettings = {};
+        }
+
         if(actionSettings==undefined) {
             throw new EventException('Invalid entity action is used');
         }
@@ -413,6 +417,7 @@ var BaseEntity = IgeEntityCannon.extend({
                 if(pos==0) {
                     this.getCommand().cursorItem(false);
                 }
+                this.action('defaultStop', {});
                 break;
         }
     },
@@ -458,6 +463,10 @@ var BaseEntity = IgeEntityCannon.extend({
     /**
      * Actions
      */
+
+    defaultStopAction: function() {
+        this.currentAction(false);
+    },
 
     attackStopAction: function(targetEntityId) {
         this.currentAction(false);
@@ -577,7 +586,7 @@ var BaseEntity = IgeEntityCannon.extend({
     buildGenericAction: function(target, args, clientId) {
         if (!ige.isServer) {
             //Remove wisp-entity from Command selected
-            this.getCommand().removeEntityFromSelected(this.id());
+            //this.getCommand().removeEntityFromSelected(this.id());
         }
 
         var targetBuildingId = this.getUnitSetting('custom', 'buildGeneric', 'entityId');
