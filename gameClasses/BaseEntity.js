@@ -124,6 +124,9 @@ var BaseEntity = IgeEntityCannon.extend({
 
     currentAction: function(val) {
         if (val !== undefined) {
+            if(!val) {
+                ige.log('currentAction: false');
+            }
             this._currentAction = val;
             return this;
         }
@@ -132,6 +135,7 @@ var BaseEntity = IgeEntityCannon.extend({
     },
 
     action: function(actionName, target, args) {
+        ige.log('Current action: ' + actionName);
         if(!this.alive()) {
             return false;
         }
@@ -147,7 +151,7 @@ var BaseEntity = IgeEntityCannon.extend({
             throw new EventException('Invalid entity action is used');
         }
 
-        if(ige.isServer && target.push!=undefined) {
+        if(ige.isServer && target && target.push!=undefined) {
             //Convert array back into Position
             target = new IgePoint(target[0], target[1], target[2], target[3]);
         }
@@ -163,7 +167,7 @@ var BaseEntity = IgeEntityCannon.extend({
 
         if(!ige.isServer) {
             //Convert Position into array
-            if(target.x!=undefined) {
+            if(target && target.x!=undefined) {
                 target = [target.x, target.y, target.z, target._floor];
             }
             var actionSignature = [this.id(), actionName, target, args];
@@ -401,6 +405,7 @@ var BaseEntity = IgeEntityCannon.extend({
      * Buttons
      */
     cancelButton: function(pos, selectedEntities, target) {
+        ige.log('Cancel button');
         if(pos==0) {
             this.getCommand().currentButtonAction(false);
             this.getCommand().rebuildActionButtonsBasedOnSelectedEntities();
@@ -413,11 +418,18 @@ var BaseEntity = IgeEntityCannon.extend({
             case 'move':
                 this.action('moveStop');
                 break;
-            default:
+            case 'buildGeneric':
                 if(pos==0) {
                     this.getCommand().cursorItem(false);
                 }
-                this.action('defaultStop', {});
+
+                this.action('buildGenericStop');
+                break;
+            case 'continueBuildGeneric':
+                this.action('continueBuildGenericStop');
+                break;
+            default:
+                this.action('defaultStop');
                 break;
         }
     },
@@ -583,6 +595,20 @@ var BaseEntity = IgeEntityCannon.extend({
         this.path.stop();
     },
 
+    continueBuildGenericStopAction: function() {
+        this.buildGenericStopAction();
+    },
+
+    continueBuildGenericAction: function(target,  args, clientId) {
+        this.setUnitSetting('custom', 'buildGeneric', 'entityId', target.id());
+        this.buildGenericAction();
+    },
+
+    buildGenericStopAction: function() {
+        this.setUnitSetting('custom', 'buildGeneric', 'entityId', false);
+        this.currentAction(false);
+    },
+
     buildGenericAction: function(target, args, clientId) {
         if (!ige.isServer) {
             //Remove wisp-entity from Command selected
@@ -655,11 +681,11 @@ var BaseEntity = IgeEntityCannon.extend({
 
         //Check if done
         if(currentBuildingProgress>=targetBuildingEntity.getUnitSetting('healthPoints', 'max')) {
-            ige.log('building DONE...')
+            ige.log('building DONE...');
 
             //Clear custom data
             this.setUnitSetting('custom', 'buildGeneric', 'entityId', false);
-            targetBuildingEntity.setUnitSetting('custom', 'buildingProgress', 0)
+            targetBuildingEntity.setUnitSetting('custom', 'buildingProgress', 0);
 
             /* CEXCLUDE */
             if (ige.isServer) {
