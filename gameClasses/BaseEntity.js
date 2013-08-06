@@ -1,4 +1,4 @@
-var BaseEntity = IgeEntityBox2d.extend({
+var BaseEntity = IgeEntityCannon.extend({
     classId: 'BaseEntity',
 
     /**
@@ -572,6 +572,148 @@ var BaseEntity = IgeEntityBox2d.extend({
     moveStopAction: function() {
         this.path.clear();
         this.path.stop();
+    },
+
+    buildGenericAction: function(target, args, clientId) {
+        if (!ige.isServer) {
+            //Remove wisp-entity from Command selected
+            this.getCommand().removeEntityFromSelected(this.id());
+        }
+
+        var targetBuildingId = this.getUnitSetting('custom', 'buildGeneric', 'entityId');
+
+        /* CEXCLUDE */
+        if (ige.isServer) {
+            //Check if item already exists
+            if(!targetBuildingId) {
+                //Add building
+                var building = new igeClassStore[args[0]](this.parent(), target.x, target.y);
+                ServerNetworkEvents.notifyClientOnHisNewEntity(building.id(), clientId); //Tell client that this is
+                building.streamMode(1);
+
+                building
+                    .data('tileX', target.x)
+                    .data('tileY', target.y)
+                    .translateToTile(target.x + 0.5, target.y + 0.5, 0)
+                building.place();
+
+                targetBuildingId = building.id();
+                this.setUnitSetting('custom', 'buildGeneric', 'entityId', targetBuildingId);
+
+//TODO: unmount wisp
+
+                ige.log('building NEW entity...');
+            }
+        }
+        /* CEXCLUDE */
+
+
+        if (!ige.isServer) {
+            //Check if client received the new building
+            if(!targetBuildingId) {
+                return true; //Not yet
+            }
+        }
+
+        var targetBuildingEntity = ige.$(targetBuildingId),
+            currentBuildingProgress = targetBuildingEntity.getUnitSetting('custom', 'buildingProgress');
+
+
+        //Get building setting
+        var actionSetting  = this.getUnitSetting('actions', 'buildGeneric') || this.getUnitSetting('subActions', 'buildGeneric');
+
+        //Add progress
+        targetBuildingEntity.addBuildingProgress(actionSetting.progress);
+        targetBuildingEntity.addHP(actionSetting.progress); //Add HP as per progress
+
+
+        //Draw the progress bar if we just received the entity
+        if (!ige.isServer) {
+            if(currentBuildingProgress==actionSetting.progress) {
+                //first time, just received from the server - set hp/progress bars
+                targetBuildingEntity.renderBuildingProgress();
+
+                //Building opacity
+                targetBuildingEntity.opacity(0.8);
+
+                //Hide builder
+            }
+        }
+
+        ige.log('building ADDING progress...');
+
+
+
+        //Check if done
+        if(currentBuildingProgress>=targetBuildingEntity.getUnitSetting('healthPoints', 'max')) {
+            ige.log('building DONE...')
+
+            //Clear custom data
+            this.setUnitSetting('custom', 'buildGeneric', 'entityId', false);
+            targetBuildingEntity.setUnitSetting('custom', 'buildingProgress', 0)
+
+            /* CEXCLUDE */
+            if (ige.isServer) {
+//TODO: mount wisp - closest to the building
+            }
+            /* CEXCLUDE */
+
+            if (!ige.isServer) {
+                //Building opacity
+                targetBuildingEntity.opacity(1);
+
+                //Show builder
+
+                //Remove progress bar
+                ige.$(targetBuildingId + '_building_progress').destroy()
+            }
+
+            //Clear custom data
+
+            return false
+        }
+
+        return true;
+    },
+
+    _buildButtonHelper: function(buildingClass, target) {
+        if(!target) { //Click on button (NOT on the map)
+            //set cursor with building
+            var tempItem = new buildingClass( this.parent(), -1000, -1000);
+            //Remove HP bar
+            ige.$(tempItem.id() + '_hp').destroy();
+
+            tempItem.mount(this.parent());
+
+            this.getCommand().cursorItem(tempItem);
+
+            //Reset actions-buttons grid
+            this.getCommand().buildEntitiesActionsGrid([this], []);
+
+            return true; //Stop stoppropagation
+        }
+
+        var cursorItem = this.getCommand().cursorItem();
+        if(!cursorItem) {
+            return false;
+        }
+        //Click on map, check if can build
+        if(cursorItem.isOnDirt() || cursorItem.isOnEntity()) {
+            return false;
+        }
+
+        //Reset cursor
+        this.getCommand().cursorItem(false);
+
+
+        //Build
+        if(target.x==undefined) {
+            //Selected entity provided, get it's position
+            //target = this._getEntityTile(target);
+            target = target._translate;
+        }
+        this.action('buildGeneric', target, [cursorItem.classId()]);
+        return true; //Stop stoppropagation
     }
 });
 
