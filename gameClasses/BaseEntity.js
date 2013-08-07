@@ -124,9 +124,6 @@ var BaseEntity = IgeEntityCannon.extend({
 
     currentAction: function(val) {
         if (val !== undefined) {
-            if(!val) {
-                ige.log('currentAction: false');
-            }
             this._currentAction = val;
             return this;
         }
@@ -135,16 +132,20 @@ var BaseEntity = IgeEntityCannon.extend({
     },
 
     action: function(actionName, target, args) {
-        ige.log('Current action: ' + actionName);
         if(!this.alive()) {
             return false;
         }
 
         var actionSettings = this.getUnitSetting('actions', actionName) ||
-                        this.getUnitSetting('subActions', actionName);
+                                this.getUnitSetting('subActions', actionName);
 
-        if(actionName=='defaultStop') {
-            actionSettings = {};
+        //Check if its a Cancel method
+        if(actionName.indexOf('Cancel', actionName.length - 6) !== -1) {
+            if(!actionSettings) {
+                actionSettings = {};
+            }
+        } else {
+            this._cancelCurrentAction();
         }
 
         if(actionSettings==undefined) {
@@ -261,8 +262,8 @@ var BaseEntity = IgeEntityCannon.extend({
 
         //Target in IN RANGE
         if(moveableUnit) {
-            //Stop moving
-            this.moveStopAction();
+            //Cancel moving
+            this.moveCancelAction();
         }
 
 
@@ -401,49 +402,42 @@ var BaseEntity = IgeEntityCannon.extend({
         return ige.$('vp1').Command;
     },
 
+    _cancelCurrentAction: function() {
+        var cancelMethod = (this.currentAction() || 'default') + 'Cancel';
+
+        if(this[cancelMethod + 'Action'] != undefined) {
+            this.action(cancelMethod);
+        }
+
+        return true;
+    },
+
     /**
      * Buttons
-     */
+     **********************************************************/
     cancelButton: function(pos, selectedEntities, target) {
-        ige.log('Cancel button');
         if(pos==0) {
             this.getCommand().currentButtonAction(false);
             this.getCommand().rebuildActionButtonsBasedOnSelectedEntities();
+
+            if(this.currentAction() == 'buildGeneric') {
+                this.getCommand().cursorItem(false);
+            }
         }
 
-        switch(this.currentAction()) {
-            case 'attack':
-                this.action('attackStop');
-                break;
-            case 'move':
-                this.action('moveStop');
-                break;
-            case 'buildGeneric':
-                if(pos==0) {
-                    this.getCommand().cursorItem(false);
-                }
-
-                this.action('buildGenericStop');
-                break;
-            case 'continueBuildGeneric':
-                this.action('continueBuildGenericStop');
-                break;
-            default:
-                this.action('defaultStop');
-                break;
-        }
+        return this._cancelCurrentAction();
     },
 
     attackButton: function(pos, selectedEntities, target) {
         if(!target) {
             //an attack button clicked, set the sub actions:
             this.getCommand().buildEntitiesActionsGrid([this], []);
-            return true; //Stop stoppropagation
+            return true; //stoppropagation
         }
 
         if(target.x!=undefined) {
             //No units selected (position provided), cannot attack
-            return true; //Stop stoppropagation
+            return true; //stoppropagation
         }
 
         this.action('attack', target);
@@ -453,7 +447,7 @@ var BaseEntity = IgeEntityCannon.extend({
         if(!target) {
             //a move button clicked, set the sub actions:
             this.getCommand().buildEntitiesActionsGrid([this], []);
-            return true; //Stop stoppropagation
+            return true; //stoppropagation
         }
 
         if(target.x==undefined) {
@@ -463,24 +457,55 @@ var BaseEntity = IgeEntityCannon.extend({
 
         this.action('move', target);
     },
-    _getEntityIdToTile: function(entity) {
-        var targetEntity = ige.$(target),
-            targetEntityPosition = targetEntity._translate;
-        if (this._parent.isometricMounts()) {
-            return this._parent.pointToTile(targetEntityPosition.toIso());
+
+    _buildButtonHelper: function(buildingClass, target) {
+        if(!target) { //Click on button (NOT on the map)
+            //set cursor with building
+            var tempItem = new buildingClass( this.parent(), -1000, -1000);
+            //Remove HP bar
+            ige.$(tempItem.id() + '_hp').destroy();
+
+            tempItem.mount(this.parent());
+
+            this.getCommand().cursorItem(tempItem);
+
+            //Reset actions-buttons grid
+            this.getCommand().buildEntitiesActionsGrid([this], []);
+
+            return true; //stoppropagation
         }
-        return this._parent.pointToTile(targetEntityPosition);
+
+        var cursorItem = this.getCommand().cursorItem();
+        if(!cursorItem) {
+            return false;
+        }
+        //Click on map, check if can build
+        if(cursorItem.isOnDirt() || cursorItem.isOnEntity()) {
+            return false;
+        }
+
+        //Reset cursor
+        this.getCommand().cursorItem(false);
+
+
+        //Build
+        if(target.x==undefined) {
+            //Selected entity provided, get it's position
+            //target = this._getEntityTile(target);
+            target = target._translate;
+        }
+        this.action('buildGeneric', target, [cursorItem.classId()]);
+        return true; //stoppropagation
     },
 
     /**
      * Actions
-     */
-
-    defaultStopAction: function() {
+     **********************************************************/
+    defaultCancelAction: function() {
         this.currentAction(false);
     },
 
-    attackStopAction: function(targetEntityId) {
+    attackCancelAction: function(targetEntityId) {
         this.currentAction(false);
     },
 
@@ -590,28 +615,13 @@ var BaseEntity = IgeEntityCannon.extend({
             .path.start()
     },
 
-    moveStopAction: function() {
+    moveCancelAction: function() {
         this.path.clear();
         this.path.stop();
-        this.currentAction(false);
     },
 
-    continueBuildGenericStopAction: function() {
-        this.buildGenericStopAction();
-    },
-
-    continueBuildGenericAction: function(target,  args, clientId) {
-        this.setUnitSetting('custom', 'buildGeneric', 'entityId', target.id());
-        this.buildGenericAction();
-    },
-
-    buildGenericStopAction: function() {
-        this.setUnitSetting('custom', 'buildGeneric', 'entityId', false);
-        this.currentAction(false);
-    },
-
-    continueBuildGenericStopAction: function() {
-        this.buildGenericStopAction();
+    continueBuildGenericCancelAction: function() {
+        this.buildGenericCancelAction();
     },
 
     continueBuildGenericAction: function(target,  args, clientId) {
@@ -619,8 +629,9 @@ var BaseEntity = IgeEntityCannon.extend({
         this.buildGenericAction();
     },
 
-    buildGenericStopAction: function() {
+    buildGenericCancelAction: function() {
         this.setUnitSetting('custom', 'buildGeneric', 'entityId', false);
+
         this.currentAction(false);
     },
 
@@ -724,46 +735,6 @@ var BaseEntity = IgeEntityCannon.extend({
         }
 
         return true;
-    },
-
-    _buildButtonHelper: function(buildingClass, target) {
-        if(!target) { //Click on button (NOT on the map)
-            //set cursor with building
-            var tempItem = new buildingClass( this.parent(), -1000, -1000);
-            //Remove HP bar
-            ige.$(tempItem.id() + '_hp').destroy();
-
-            tempItem.mount(this.parent());
-
-            this.getCommand().cursorItem(tempItem);
-
-            //Reset actions-buttons grid
-            this.getCommand().buildEntitiesActionsGrid([this], []);
-
-            return true; //Stop stoppropagation
-        }
-
-        var cursorItem = this.getCommand().cursorItem();
-        if(!cursorItem) {
-            return false;
-        }
-        //Click on map, check if can build
-        if(cursorItem.isOnDirt() || cursorItem.isOnEntity()) {
-            return false;
-        }
-
-        //Reset cursor
-        this.getCommand().cursorItem(false);
-
-
-        //Build
-        if(target.x==undefined) {
-            //Selected entity provided, get it's position
-            //target = this._getEntityTile(target);
-            target = target._translate;
-        }
-        this.action('buildGeneric', target, [cursorItem.classId()]);
-        return true; //Stop stoppropagation
     }
 });
 
