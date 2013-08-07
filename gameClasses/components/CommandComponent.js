@@ -85,8 +85,6 @@ var CommandComponent = IgeEventingClass.extend({
                     return true; //Someone else is using the mouse
                 }
                 ige.client.data('cursorMode', 'UICommand');
-
-                ige.log('UICommand over');
             }, true)
             .mouseDown(function(event) {
                 if(!this.mouseOver()) {
@@ -96,21 +94,18 @@ var CommandComponent = IgeEventingClass.extend({
                     return true; //Someone else is using the mouse
                 }
                 ige.client.data('cursorMode', 'UICommand');
-                ige.log('UICommand down');
             })
             .mouseOut(function(event) {
                 if(ige.client.data('cursorMode')!='UICommand') {
                     return true; //Someone else is using the mouse
                 }
                 ige.client.data('cursorMode', null);
-                ige.log('UICommand out');
             })
             .mouseUp(function(event) {
                 if(ige.client.data('cursorMode')!='UICommand') {
                     return true; //Someone else is using the mouse
                 }
                 ige.client.data('cursorMode', null);
-                ige.log('UICommand up');
             })
             .height(338)
             .center(0)
@@ -232,7 +227,7 @@ var CommandComponent = IgeEventingClass.extend({
                     continue;
                 }
 
-                var actionName = this._ucfirst(sharedActions[actionNum]); //sharedActions[actionNum].charAt(0).toUpperCase() + sharedActions[actionNum].slice(1); //moveStop -> MoveStop
+                var actionName = this._ucfirst(sharedActions[actionNum]); //sharedActions[actionNum].charAt(0).toUpperCase() + sharedActions[actionNum].slice(1); //moveCancel -> MoveCancel
 
                 this._options.client.uiCommandBottom.actionGridButtons[actionNum] = new IgeUiRadioButton()
                     .id('uiCommandBottomActionGridButton' + actionName)
@@ -278,7 +273,7 @@ var CommandComponent = IgeEventingClass.extend({
         currentButtonAction = currentButtonAction + 'Button';
         for(var pos in selectedEntities) {
             if(selectedEntities[pos][currentButtonAction].call(selectedEntities[pos], pos, selectedEntities, target)) {
-                //User asked to stop button
+                //User asked to stop triggering button on other entities
                 return true;
             }
         }
@@ -300,11 +295,11 @@ var CommandComponent = IgeEventingClass.extend({
     },
 
     _ucfirst: function(str) {
-        return str.charAt(0).toUpperCase() + str.slice(1); //moveStop -> MoveStop
+        return str.charAt(0).toUpperCase() + str.slice(1); //moveCancel -> MoveCancel
     },
 
     _lcfirst: function(str) {
-        return str.charAt(0).toLowerCase() + str.slice(1); //moveStop -> MoveStop
+        return str.charAt(0).toLowerCase() + str.slice(1); //MoveCancel -> moveCancel
     },
 
     _getSharedActionsForEntitiers: function(entities) {
@@ -347,11 +342,11 @@ var CommandComponent = IgeEventingClass.extend({
         if (val !== undefined) {
             this._overEntity = val;
 
-            if(val) {
+            /*if(val) {
                 ige.log('Entity over ' + val.id());
             } else {
                 ige.log('Entity out');
-            }
+            }*/
 
             return this._entity;
         }
@@ -388,7 +383,6 @@ var CommandComponent = IgeEventingClass.extend({
             return true; //Someone else is using the mouse
         }
         ige.client.data('cursorMode', 'objectLayerCommand');
-        ige.log('objectLayerCommand down');
 
 		if (this._enabled && event.igeViewport.id() === this._entity.id()) {
 			// Record the mouse down position - select starting
@@ -412,7 +406,6 @@ var CommandComponent = IgeEventingClass.extend({
                     return true; //Someone else is using the mouse
                 }
                 ige.client.data('cursorMode', null);
-                ige.log('objectLayerCommand up');
 
                 //this._options.client.objectLayer.pointToTile(ige._mousePos );
 				this._mouseEnd = this._options.client.objectLayer.mousePos().clone();
