@@ -302,7 +302,7 @@ var CommandComponent = IgeEventingClass.extend({
         return str.charAt(0).toLowerCase() + str.slice(1); //MoveCancel -> moveCancel
     },
 
-    _getSharedActionsForEntitiers: function(entities) {
+    _getSharedActionsForEntitiers: function(entities, includeSubActions) {
         var allActions = {},
             sharedActions = [],
             actions,
@@ -311,14 +311,23 @@ var CommandComponent = IgeEventingClass.extend({
 
 
         //Get all actions, and count how many entities can do them
-        for(i in entities) {
-            actions = entities[i].getUnitSetting('actions');
+        var actionTypes = ['actions', 'subActions'];
+        if(!includeSubActions) {
+            actionTypes = ['actions'];
+        }
 
-            for(action in actions) {
-                if(allActions[action]==undefined) {
-                    allActions[action] = 1;
-                } else {
-                    allActions[action]++;
+        for(i in actionTypes) {
+            var actionType = actionTypes[i];
+
+            for(i in entities) {
+                actions = entities[i].getUnitSetting(actionType);
+
+                for(action in actions) {
+                    if(allActions[action]==undefined) {
+                        allActions[action] = 1;
+                    } else {
+                        allActions[action]++;
+                    }
                 }
             }
         }
@@ -342,11 +351,11 @@ var CommandComponent = IgeEventingClass.extend({
         if (val !== undefined) {
             this._overEntity = val;
 
-            /*if(val) {
+            if(val) {
                 ige.log('Entity over ' + val.id());
             } else {
                 ige.log('Entity out');
-            }*/
+            }
 
             return this._entity;
         }
@@ -468,6 +477,25 @@ var CommandComponent = IgeEventingClass.extend({
     },
 
     /**
+     * Return tiles for a given point
+     * @param point current mouse position
+     * @returns {*}
+     */
+    pointToTile: function(point) {
+        if(point == undefined) {
+            point = this._mouseEnd;
+        } else if (this._options.client.objectLayer.isometricMounts()) {
+            point = point.toIso();
+        }
+
+        if(point == undefined) {
+            return false;
+        }
+
+        return this._options.client.objectLayer.pointToTile(point);
+    },
+
+    /**
      * Handle click
      * @private
      */
@@ -476,7 +504,7 @@ var CommandComponent = IgeEventingClass.extend({
         var currentButtonAction = this.currentButtonAction(),
             overEntity = this.entityOver(),
             selectedEntities = this.selectedEntities(),
-            sharedActions = this._getSharedActionsForEntitiers(selectedEntities),
+            sharedActions = this._getSharedActionsForEntitiers(selectedEntities, true),
             endTile = this._options.client.objectLayer.pointToTile(this._mouseEnd);
 
         //Trigger an action using the selected button
@@ -487,7 +515,12 @@ var CommandComponent = IgeEventingClass.extend({
             } else {
                 this.triggerButtonAction(currentButtonAction, selectedEntities, endTile);
             }*/
-            this.triggerButtonAction(currentButtonAction, selectedEntities, (endTile || overEntity.id()) );
+            if(overEntity && overEntity.alive()) {
+                this.triggerButtonAction(currentButtonAction, selectedEntities, overEntity );
+            } else {
+                this.triggerButtonAction(currentButtonAction, selectedEntities, endTile );
+            }
+
 
             return true;
         }
@@ -508,6 +541,35 @@ var CommandComponent = IgeEventingClass.extend({
         } else {
             switch(overEntity.Control.controlType()) {
                 case this.typeOwn:
+                    //Check if building
+                    if(overEntity instanceof Building) {
+                        //Check if Building is not ready
+                        var buildingProgress = overEntity.getUnitSetting('custom', 'buildingProgress');
+                        if(buildingProgress != undefined && buildingProgress != false) {
+                            //Check if unit can continue building
+                            if(sharedActions.indexOf('continueBuildGeneric')==-1) {
+                                return true; //Unit can't move
+                            }
+
+                            //Continue building
+                            this._triggetMethodOnSelected(selectedEntities, 'continueBuildGeneric', overEntity.id());
+                            break;
+                        }
+
+                        //Check if building needs a repair
+                        if(overEntity.getUnitSetting('healthPoints', 'current') <
+                                overEntity.getUnitSetting('manaPoints', 'max')) {
+                            //Check if unit can repair
+                            if(sharedActions.indexOf('repairGeneric')==-1) {
+                                return true; //Unit can't move
+                            }
+
+                            this._triggetMethodOnSelected(selectedEntities, 'repairGeneric', overEntity.id());
+                            break;
+                        }
+                    }
+
+
                     this.selectedEntities([overEntity]);
                     break;
 

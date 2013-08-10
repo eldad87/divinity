@@ -3,8 +3,11 @@ var Wisp = Unit.extend({
     init: function () {
         Unit.prototype.init.call(
             this,
-            {move:{speed:0.1}, build:{}},
-            {buildGeneric:{range:0, isRepeatable: true, cooldown: 1, lastUsageTime:0, progress:40}, moveStop:{}, buildTreeOfLife:{}},
+            {move:{speed:0.1}, build:{}, repairGeneric: {range:0, isRepeatable: true, cooldown: 1, lastUsageTime:0, progress:40, allowed:['Building']}},
+            {
+                buildGeneric:{range:0, isRepeatable: true, cooldown: 1, lastUsageTime:0, progress:40},
+                continueBuildGeneric:{},
+                moveStop:{}, buildTreeOfLife:{}},
             {type: armor.medium, amount: 1},
             {max: 70.0, current: 70.0},
             {max: 0.0, current: 0.0},

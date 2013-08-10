@@ -164,6 +164,10 @@ var Unit = BaseEntity.extend({
         }
 
         IgeEntityBox2d.prototype.update.call(this, ctx);
+    },
+
+    getType: function() {
+        return 'Unit';
     }
 });
 

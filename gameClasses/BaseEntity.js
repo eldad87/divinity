@@ -30,6 +30,9 @@ var BaseEntity = IgeEntityCannon.extend({
         this.streamSections(['transform', 'unit']);
     },
 
+    getType: function() {
+        return false;
+    },
 
 
     tick: function (ctx) {
@@ -64,6 +67,7 @@ var BaseEntity = IgeEntityCannon.extend({
             }
         }
 
+        hp = Math.min(this.getUnitSetting('healthPoints', 'max'), hp);
         this.setUnitSetting('healthPoints', 'current', hp);
         return this;
     },
@@ -72,6 +76,7 @@ var BaseEntity = IgeEntityCannon.extend({
         var mana = this.getUnitSetting('manaPoints', 'current');
         mana += val;
 
+        mana = Math.min(this.getUnitSetting('manaPoints', 'max'), mana);
         this.setUnitSetting('manaPoints', 'current', mana);
         return this;
     },
@@ -192,7 +197,7 @@ var BaseEntity = IgeEntityCannon.extend({
 
         //Check if EntityId or Position is given
         var targetPosition = target; //By default, treat target is position
-        if(target.x==undefined) {
+        if(target==undefined || target.x==undefined) {
             //EntityId is given
             var targetEntity = ige.$(target);
 
@@ -458,6 +463,46 @@ var BaseEntity = IgeEntityCannon.extend({
         this.action('move', target);
     },
 
+    repairGenericButton: function(pos, selectedEntities, target) {
+        if(!target) {
+            //an attack button clicked, set the sub actions:
+            this.getCommand().buildEntitiesActionsGrid([this], []);
+            return true; //stoppropagation
+        }
+
+        if(target.x!=undefined) {
+            //No units selected (position provided), cannot repair
+            return true; //stoppropagation
+        }
+
+        var actionSettings = this.getUnitSetting('actions' ,'repairGeneric') ||
+            this.getUnitSetting('subActions' ,'repairGeneric');
+
+        if(!this._isAllowedRepaier(target, actionSettings)) {
+            return false;
+        }
+
+        //Check if its a building, and still in building progress
+        if(target.getType() == 'Building') {
+            var buildingProgress = target.getUnitSetting('custom', 'buildingProgress');
+            if(buildingProgress) {
+                return false; //Can't repair, first finish building entity
+            }
+        }
+
+        this.action('repairGeneric', target.id());
+    },
+
+    _isAllowedRepaier: function(target, actionSettings) {
+        //Check if chosen entity can be repaired
+
+        if(actionSettings.allowed.indexOf(target.getType()) == -1) {
+            return false;
+        }
+
+        return true;
+    },
+
     _buildButtonHelper: function(buildingClass, target) {
         if(!target) { //Click on button (NOT on the map)
             //set cursor with building
@@ -490,9 +535,9 @@ var BaseEntity = IgeEntityCannon.extend({
 
         //Build
         if(target.x==undefined) {
-            //Selected entity provided, get it's position
-            //target = this._getEntityTile(target);
-            target = target._translate;
+            //Selected entity provided, get mouse position
+            //target = target._translate;
+            target = this.getCommand().pointToTile();
         }
         this.action('buildGeneric', target, [cursorItem.classId()]);
         return true; //stoppropagation
@@ -620,18 +665,47 @@ var BaseEntity = IgeEntityCannon.extend({
         this.path.stop();
     },
 
+    repairGenericAction: function(target, args, clientId) {
+        var actionSettings = this.getUnitSetting('actions' ,'repairGeneric') ||
+            this.getUnitSetting('subActions' ,'repairGeneric');
+
+        var target = ige.$(target);
+
+        if(!this._isAllowedRepaier(target, actionSettings)) {
+            return false;
+        }
+
+        //Check if its a building, and still in building progress
+        if(target.getType() == 'Building') {
+            var buildingProgress = target.getUnitSetting('custom', 'buildingProgress');
+            if(buildingProgress) {
+                return false; //Can't repair, first finish building entity
+            }
+        }
+
+        //Get target settings
+        var targetHPSettings = target.getUnitSetting('healthPoints');
+
+        //Check if repair is still needed
+        if(targetHPSettings.current>=targetHPSettings.max) {
+            return false;
+        }
+
+        target.addHP(actionSettings .progress);
+        return true;
+    },
+
     continueBuildGenericCancelAction: function() {
         this.buildGenericCancelAction();
     },
 
     continueBuildGenericAction: function(target,  args, clientId) {
-        this.setUnitSetting('custom', 'buildGeneric', 'entityId', target.id());
-        this.buildGenericAction();
+        this.setUnitSetting('custom', 'buildGeneric', 'entityId', target);
+        return this.action('buildGeneric', target);
     },
 
     buildGenericCancelAction: function() {
         this.setUnitSetting('custom', 'buildGeneric', 'entityId', false);
-
         this.currentAction(false);
     },
 
@@ -647,23 +721,46 @@ var BaseEntity = IgeEntityCannon.extend({
         if (ige.isServer) {
             //Check if item already exists
             if(!targetBuildingId) {
-                //Add building
-                var building = new igeClassStore[args[0]](this.parent(), target.x, target.y);
-                ServerNetworkEvents.notifyClientOnHisNewEntity(building.id(), clientId); //Tell client that this is
-                building.streamMode(1);
 
-                building
-                    .data('tileX', target.x)
-                    .data('tileY', target.y)
-                    .translateToTile(target.x + 0.5, target.y + 0.5, 0)
-                building.place();
+                //Check if position given
+                if(target.x != undefined) {
+                    //Add building
+                    var building = new igeClassStore[args[0]](this.parent(), target.x, target.y);
+                    ServerNetworkEvents.notifyClientOnHisNewEntity(building.id(), clientId); //Tell client that this is
+                    building.streamMode(1);
+
+                    building
+                        .data('tileX', target.x)
+                        .data('tileY', target.y)
+                        .translateToTile(target.x + 0.5, target.y + 0.5, 0)
+                    building.place();
+
+
+
+                    //TODO: unmount wisp
+
+                    ige.log('building NEW entity...');
+
+                    //Id given
+                } else if(target) {
+                    //Find building
+                    var building = ige.$(target);
+                    if(!building) {
+                        return false;
+                    }
+
+                    //Check building still under construction..
+                    var buildingProgress = building.getUnitSetting('custom', 'buildingProgress');
+                    if(buildingProgress == undefined || buildingProgress == false) {
+                        return false;
+                    }
+
+                    ige.log('Continue building');
+                }
+
 
                 targetBuildingId = building.id();
                 this.setUnitSetting('custom', 'buildGeneric', 'entityId', targetBuildingId);
-
-//TODO: unmount wisp
-
-                ige.log('building NEW entity...');
             }
         }
         /* CEXCLUDE */

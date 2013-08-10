@@ -235,6 +235,7 @@ var Client = IgeClass.extend({
         this.gameTexture.uiButtonMove = new IgeTexture('/divinity/assets/textures/ui/uiButton_move.png');
         this.gameTexture.uiButtonAttack = new IgeTexture('/divinity/assets/textures/ui/uiButton_attack.png');
         this.gameTexture.uiButtonBuild = new IgeTexture('/divinity/assets/textures/ui/uiButton_build.png');
+        this.gameTexture.uiButtonRepairGeneric = new IgeTexture('/divinity/assets/textures/ui/uiButton_repairGeneric.png');
         //Sub buttons
         this.gameTexture.uiButtonBuildTreeOfLife = new IgeTexture('/divinity/assets/textures/ui/uiButton_buildTreeOfLife.png');
         this.gameTexture.uiButtonBuildAncientOfWar = new IgeTexture('/divinity/assets/textures/ui/uiButton_buildAncientOfWar.png');

@@ -148,6 +148,10 @@ var Building = BaseEntity.extend({
 
         // Call the parent class destroy method
         BaseEntity.prototype.destroy.call(this);
+    },
+
+    getType: function() {
+        return 'Building';
     }
 });
 
