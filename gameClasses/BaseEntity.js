@@ -16,7 +16,7 @@ var BaseEntity = IgeEntityCannon.extend({
         }
         //this.implement(BaseEntity);
 
-        IgeEntityBox2d.prototype.init.call(this);
+        IgeEntityCannon.prototype.init.call(this);
 
         this._currentAction = false;
 
@@ -40,7 +40,7 @@ var BaseEntity = IgeEntityCannon.extend({
             this._repeatableAction(this.repeaterAction, this.repeaterTarget, this.repeaterArgs);
         }
 
-        IgeEntityBox2d.prototype.tick.call(this, ctx);
+        IgeEntityCannon.prototype.tick.call(this, ctx);
     },
 
     actionRepeater: function(actionName, target, args) {
@@ -103,7 +103,7 @@ var BaseEntity = IgeEntityCannon.extend({
             // The section was not one that we handle here, so pass this
             // to the super-class streamSectionData() method - it handles
             // the "transform" section by itself
-            return IgeEntityBox2d.prototype.streamSectionData.call(this, sectionId, data);
+            return IgeEntityCannon.prototype.streamSectionData.call(this, sectionId, data);
         }
     },
 

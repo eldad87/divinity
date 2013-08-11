@@ -34,6 +34,7 @@ var Building = BaseEntity.extend({
             });*/
             this.cannonBody({
                 type: 'static',
+                allowSleep: false,
                 mass: 0,
                 fixtures: [{
                     shape: {

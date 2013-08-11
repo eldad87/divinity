@@ -4,6 +4,9 @@ var Game = IgeClass.extend({
 	init: function (App, options) {
 		// Create the engine
 		ige = new IgeEngine();
+        ige.addComponent(IgeCannonComponent)
+            .cannon.gravity(0, 0, -600)
+            .cannon.createWorld();
 
 		if (!ige.isServer) {
 			ige.client = new App();

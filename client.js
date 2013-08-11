@@ -17,9 +17,6 @@ var Client = IgeClass.extend({
             .box2d.gravity(0, 0)
             .box2d.createWorld()
             .box2d.start();*/
-        ige.addComponent(IgeCannonComponent)
-            .cannon.gravity(0, 0, -600)
-            .cannon.createWorld();
 
 
         // Enable networking
