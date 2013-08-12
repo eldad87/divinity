@@ -149,7 +149,7 @@ var BaseEntity = IgeEntityCannon.extend({
             if(!actionSettings) {
                 actionSettings = {};
             }
-        } else {
+        } else if(!args || args.cancelCurrentAction == undefined || args.cancelCurrentAction == true) {
             this._cancelCurrentAction();
         }
 
@@ -701,7 +701,7 @@ var BaseEntity = IgeEntityCannon.extend({
 
     continueBuildGenericAction: function(target,  args, clientId) {
         this.setUnitSetting('custom', 'buildGeneric', 'entityId', target);
-        return this.action('buildGeneric', target);
+        return this.action('buildGeneric', target, {cancelCurrentAction:false});
     },
 
     buildGenericCancelAction: function() {
@@ -773,7 +773,8 @@ var BaseEntity = IgeEntityCannon.extend({
             }
         }
 
-        var targetBuildingEntity = ige.$(targetBuildingId),
+        var targetBuildingEntity = ige.$(targetBuildingId);
+        var
             currentBuildingProgress = targetBuildingEntity.getUnitSetting('custom', 'buildingProgress');
 
 

@@ -33,8 +33,8 @@ var Unit = BaseEntity.extend({
             this.cannonBody({
                 type: 'dynamic',
                 mass: 1,
-                angularDamping: 1.0,
-                linearDamping: 0.05,
+                angularDamping: 0.0,
+                linearDamping: 0.5,
                 allowSleep: false,
                 sleepSpeedLimit: 0.1,
                 sleepTimeLimit: 1000,

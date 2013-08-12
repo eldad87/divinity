@@ -8,9 +8,6 @@ var TreeOfLife = Building.extend({
         this.data('tileWidth', tileWidth);
         this.data('tileHeight', tileHeight);
 
-        // Setup the 3d bounds container (this)
-        this.size3d(tileWidth * parent._tileWidth, tileHeight * parent._tileHeight, parent._tileHeight * 1.25)
-
         Building.prototype.init.call(
             this,
             {},
@@ -28,6 +25,8 @@ var TreeOfLife = Building.extend({
         if (ige.isServer) {
             this.mount(parent);
             //TODO setup 3D bounds
+            // Setup the 3d bounds container (this)
+            this.size3d(tileWidth * parent._tileWidth, tileHeight * parent._tileHeight, parent._tileHeight * 1.25)
         }
         /* CEXCLUDE */
 
