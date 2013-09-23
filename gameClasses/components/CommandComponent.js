@@ -67,7 +67,7 @@ var CommandComponent = IgeEventingClass.extend({
         // Create the UI scene
         this._options.client.uiScene = new IgeScene2d()
             .id('uiScene')
-            .depth(1)
+            .depth(2)
             .drawBounds(false)
             .ignoreCamera(true)
             .mount(this._options.client.mainScene);
