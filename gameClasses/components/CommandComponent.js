@@ -172,17 +172,21 @@ var CommandComponent = IgeEventingClass.extend({
 
         // Get shared actions for selected entities
         var selectedEntities = this.selectedEntities();
+        if(!selectedEntities) {
+            return true;
+        }
         var sharedActions = [];
         for(var i in selectedEntities) {
             var actions = selectedEntities[i].getUnitSetting('actions')
-            for(var u in actions) {
-                if(sharedActions.indexOf(actions[u])!=-1) {
+            for(var action in actions) {
+                if(sharedActions.indexOf(action)!=-1) {
                     continue;
                 }
 
-                sharedActions.push(actions[u]);
+                sharedActions.push(action);
             }
         }
+
 
         //Action grid buttons
         for(var i=1; i<=3; i++) {
@@ -311,7 +315,7 @@ var CommandComponent = IgeEventingClass.extend({
             //Move to tile
             var endTile = this._options.client.objectLayer.pointToTile(this._mouseEnd);
             for(var i in selectedEntities) {
-                selectedEntities[i].Control.moveAction(endTile);
+                selectedEntities[i].moveAction(endTile);
             }
 
         } else {
@@ -329,7 +333,10 @@ var CommandComponent = IgeEventingClass.extend({
                         return true; //Nothing to do
                     }
 
-                    //TODO: Attack
+                    for(var i in selectedEntities) {
+                        selectedEntities[i].attackAction(overEntity);
+                    }
+
                     break;
             }
         }

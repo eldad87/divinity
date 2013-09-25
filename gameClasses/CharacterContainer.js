@@ -41,9 +41,7 @@ var CharacterContainer = IgeEntityBox2d.extend({
             // Create a character entity as a child of this container
             self.character = new Character(animationType)
                 .id(self.id() + '_character')
-                .highlight(false)
                 .drawBounds(false)
-                .drawBoundsData(false)
                 .originTo(0.5, 0.6, 0.5)
                 .mount(self);
 

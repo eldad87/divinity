@@ -7,31 +7,36 @@ var ControlComponent = IgeClass.extend({
 	componentId: 'Control',
 	
 	init: function (entity, options) {
-		var self = this;
 
 		// Store the entity that this component has been added to
 		this._entity = entity;
 
         // Default, everyone are enemies
-		this._controlType = this.typeEnemy;
+		this._controlType = CommandComponent.prototype.typeEnemy;
 
 		// Store any options that were passed to us
 		this._options = options;
 
-
         if (!ige.isServer) {
-            var overFunc = function(event) {
-                    event.igeViewport.Command.entityOver(this);
-                },
-                outFunc = function(event) {
-                    event.igeViewport.Command.entityOver(false);
-                };
-
-            this._entity
-                .mouseOver(overFunc)
-                .mouseOut(outFunc);
+            this.enableMouseHandler();
         }
 	},
+
+    enableMouseHandler: function(){
+
+        var overFunc = function(event) {
+                event.igeViewport.Command.entityOver(this);
+            },
+            outFunc = function(event) {
+                event.igeViewport.Command.entityOver(false);
+            };
+
+        this._entity
+            .mouseOver(overFunc)
+            .mouseOut(outFunc);
+
+        return this._entity;
+    },
 
     controlType: function(val) {
         if (val !== undefined) {
@@ -41,58 +46,7 @@ var ControlComponent = IgeClass.extend({
         }
 
         return this._controlType;
-    },
-
-    attackAction: function(entity) {
-
-    },
-
-    stopMoveAction: function() {
-        this._entity.path.clear().stop();
-        ige.network.send('playerStopMove');
-    },
-
-    /**
-     * Move entity
-     * @param endTile
-     * @private
-     */
-    moveAction: function (endTile) {
-        // Get the tile co-ordinates that the mouse is currently over
-        var currentPosition = this._entity._translate,
-            startTile,
-            newPath,
-
-            tileChecker = function (tileData, tileX, tileY) {
-                // If the map tile data is set, don't path along it
-                return !tileData;
-            };
-
-        // Calculate which tile our character is currently "over"
-        if (this._entity._parent.isometricMounts()) {
-            startTile = this._entity._parent.pointToTile(currentPosition.toIso());
-        } else {
-            startTile = this._entity._parent.pointToTile(currentPosition);
-        }
-
-
-        if(endTile==startTile) {
-            return true; //Nothin to do
-        }
-
-        // Send a message to the server asking to path to this tile
-        ige.network.send('playerControlToTile', [endTile.x, endTile.y]);  //TODO: do it for all selected entities
-
-        // Create a path from the current position to the target tile
-        newPath = ige.client.pathFinder.aStar(ige.$('DirtLayer'), startTile, endTile, tileChecker, true, true);
-
-        // Tell the entity to start pathing along the new path
-        this._entity
-            .path.clear()
-            .path.add(newPath)
-            .path.start();
     }
-
 });
 
 if (typeof(module) !== 'undefined' && typeof(module.exports) !== 'undefined') { module.exports = ControlComponent; }

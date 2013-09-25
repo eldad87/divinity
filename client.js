@@ -219,7 +219,7 @@ var Client = IgeClass.extend({
         this.gameTexture.uiCommandTop = new IgeTexture('/divinity/assets/textures/ui/command_top.png');
         this.gameTexture.uiCommandBottom = new IgeTexture('/divinity/assets/textures/ui/command_bottom.png');
 
-        this.gameTexture.uiButtonStopMove = new IgeTexture('/divinity/assets/textures/ui/uiButton_stopMove.png');
+        this.gameTexture.uiButtonMoveStop = new IgeTexture('/divinity/assets/textures/ui/uiButton_moveStop.png');
         this.gameTexture.uiButtonMove = new IgeTexture('/divinity/assets/textures/ui/uiButton_move.png');
         this.gameTexture.uiButtonAttack = new IgeTexture('/divinity/assets/textures/ui/uiButton_attack.png');
     }

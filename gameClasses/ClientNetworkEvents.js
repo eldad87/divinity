@@ -24,15 +24,20 @@ var ClientNetworkEvents = {
 	},
 
     _onEntityCreated: function(entity) {
-        var isOwner = (ClientNetworkEvents._playerEntities.indexOf(entity.id())==-1);
-
+        var isOwner = ClientNetworkEvents._playerEntities.indexOf(entity.id());
+        if(isOwner!==-1) {
+            delete ClientNetworkEvents._playerEntities[isOwner];
+        }
         //Check if control is not set yet
         entity
-            .addComponent(ControlComponent)
+            .highlight(false)
+            .drawBounds(false)
+            .drawBoundsData(false)
+            .Control.enableMouseHandler()
             .Control.controlType(
-                isOwner ?
-                    CommandComponent.prototype.typeEnemy :
-                    CommandComponent.prototype.typeOwn
+                isOwner!==-1 ?
+                    CommandComponent.prototype.typeOwn :
+                    CommandComponent.prototype.typeEnemy
             );
 
         ige.log('Stream entity created with ID: ' + entity.id());

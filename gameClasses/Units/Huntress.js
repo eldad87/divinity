@@ -3,9 +3,7 @@ var Huntress = Unit.extend({
     init: function () {
         Unit.prototype.init.call(
             this,
-            ['move', 'stopMove', 'attack'],
-            1,
-            {type: attack.normal, amount: 10, cooldown: 1, range: 3},
+            {'move':{speed:1}, 'moveStop':{}, 'attack':{type: attack.normal, amount: 10, cooldown: 1, range: 1}},
             {type: armor.medium, amount: 2},
             {max: 240, current: 240},
             {max: 0, current: 0},
