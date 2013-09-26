@@ -36,9 +36,27 @@ var Unit = CharacterContainer.extend({
     },
 
     init: function (actions, armor, hp, mana, animationType) {
+        CharacterContainer.prototype.init.call(this, animationType);
+
         this.addComponent(ControlComponent);
         this.unitSettings(actions, armor, hp, mana);
-        CharacterContainer.prototype.init.call(this, animationType);
+        this.streamSections(['transform', 'direction', 'unit']);
+    },
+
+    streamSectionData: function (sectionId, data) {
+        if (sectionId !== 'unit') {
+            return CharacterContainer.prototype.streamSectionData.call(this, sectionId, data);
+        }
+
+        if (!ige.isServer) {
+            if (data) {
+                // We have been given new data!
+                this.unitSettings(data.actions, data.armor, data.healthPoints, data.manaPoints);
+            }
+        } else {
+            // Return current data
+            return this.unitSettings();
+        }
     },
 
     action: function(actionName, args) {
@@ -82,7 +100,6 @@ var Unit = CharacterContainer.extend({
         var currentPosition = this._translate,
                 targetEntityPosition = targetEntity._translate;
 
-
         if (this._parent.isometricMounts()) {
             currentPosition = this._parent.pointToTile(currentPosition.toIso());
             targetEntityPosition = this._parent.pointToTile(targetEntityPosition.toIso());
@@ -109,7 +126,13 @@ var Unit = CharacterContainer.extend({
             this.moveAction(targetEntityPosition);
         }
 
-        //Every
+        /**
+         * Every x seconds, check if in range
+         *  NO: get closer
+         *  Yes: Check if cooldown-ver
+         *      No: Wait
+         *      Yes: Attack
+         */
     },
 
     moveStopAction: function() {
