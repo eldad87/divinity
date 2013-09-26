@@ -64,7 +64,7 @@ var Unit = CharacterContainer.extend({
             throw new EventException('Invalid entity action is used');
         }
 
-        this[actionName].call(this, args);
+        this[actionName + 'Action'].apply(this, args);
     },
 
     getActionSettings: function(actionName) {
@@ -177,7 +177,9 @@ var Unit = CharacterContainer.extend({
 
             // Create a path from the current position to the target tile
             newPath = ige.client.pathFinder.aStar(ige.$('DirtLayer'), startTile, endTile, tileChecker, true, true);
-        } else {
+        }
+
+        if (ige.isServer) {
             // Create a path from the current position to the target tile
             newPath = ige.server.pathFinder.aStar(ige.$('DirtLayer'), startTile, endTile, tileChecker, true, true);
         }

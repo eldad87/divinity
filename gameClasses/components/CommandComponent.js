@@ -315,7 +315,7 @@ var CommandComponent = IgeEventingClass.extend({
             //Move to tile
             var endTile = this._options.client.objectLayer.pointToTile(this._mouseEnd);
             for(var i in selectedEntities) {
-                selectedEntities[i].moveAction(endTile);
+                selectedEntities[i].action('move', [endTile])
             }
 
         } else {
@@ -334,7 +334,7 @@ var CommandComponent = IgeEventingClass.extend({
                     }
 
                     for(var i in selectedEntities) {
-                        selectedEntities[i].attackAction(overEntity);
+                        selectedEntities[i].action('attack', [overEntity])
                     }
 
                     break;
