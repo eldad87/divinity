@@ -27,7 +27,7 @@ function addAttackRatio(light, medium, havey, fortified, hero, unarmored) {
 
 var Unit = CharacterContainer.extend({
     classId: 'Unit',
-
+    _currentAction: false,
     _unitSettings: {
         actions:        {},
         armor:          {type: 'none', amount: 0},
@@ -53,18 +53,40 @@ var Unit = CharacterContainer.extend({
                 // We have been given new data!
                 this.unitSettings(data.actions, data.armor, data.healthPoints, data.manaPoints);
             }
-        } else {
+        }
+
+        /* CEXCLUDE */
+        if (ige.isServer) {
             // Return current data
             return this.unitSettings();
         }
+        /* CEXCLUDE */
+    },
+
+    currentAction: function(val) {
+        if (val !== undefined) {
+            this._currentAction = val;
+            /*if(val===false) {
+                ige.log('Clear action: ' + this._currentAction);
+            } else {
+                ige.log('Set new action: ' + val);
+            }*/
+            return this;
+        }
+
+        return this._currentAction;
     },
 
     action: function(actionName, args) {
         if(this._unitSettings.actions[actionName]==undefined) {
             throw new EventException('Invalid entity action is used');
         }
+        this.currentAction(actionName);
 
         this[actionName + 'Action'].apply(this, args);
+        args.push(this.id());
+        args.push(actionName);
+        ige.network.send('action', args);
     },
 
     getActionSettings: function(actionName) {
@@ -97,8 +119,16 @@ var Unit = CharacterContainer.extend({
      * Actions
      */
     attackAction: function(targetEntity) {
+        //Check if done attacking
+        if(this.currentAction()!='attack') {
+            return true;
+        } else if(!ige.$(targetEntity.id())) {
+            this.this.currentAction(false);
+            return true;
+        }
+
         var currentPosition = this._translate,
-                targetEntityPosition = targetEntity._translate;
+            targetEntityPosition = targetEntity._translate;
 
         if (this._parent.isometricMounts()) {
             currentPosition = this._parent.pointToTile(currentPosition.toIso());
@@ -133,13 +163,12 @@ var Unit = CharacterContainer.extend({
          *      No: Wait
          *      Yes: Attack
          */
+
+        //this.currentAction(false); //Done when enemy is dead
     },
 
     moveStopAction: function() {
         this.path.clear().stop();
-        if (!ige.isServer) {
-            ige.network.send('playerStopMove');
-        }
     },
 
     /**
@@ -152,6 +181,8 @@ var Unit = CharacterContainer.extend({
         var currentPosition = this._translate,
             startTile,
             newPath,
+            self = this,
+            moveSetting = this.getActionSettings('move'),
 
             tileChecker = function (tileData, tileX, tileY) {
                 // If the map tile data is set, don't path along it
@@ -171,24 +202,38 @@ var Unit = CharacterContainer.extend({
         }
 
         if (!ige.isServer) {
-            // Send a message to the server asking to path to this tile
-            ige.network.send('playerControlToTile', [endTile.x, endTile.y]);  //TODO: do it for all selected entities
-
-
             // Create a path from the current position to the target tile
             newPath = ige.client.pathFinder.aStar(ige.$('DirtLayer'), startTile, endTile, tileChecker, true, true);
         }
 
+        /* CEXCLUDE */
         if (ige.isServer) {
             // Create a path from the current position to the target tile
             newPath = ige.server.pathFinder.aStar(ige.$('DirtLayer'), startTile, endTile, tileChecker, true, true);
         }
+        /* CEXCLUDE */
 
         // Tell the entity to start pathing along the new path
         this
             .path.clear()
             .path.add(newPath)
-            .path.start();
+            .path.speed(moveSetting['speed']);
+
+        //Check that this is a move request, and not a part of other requests, I.e attack
+        if(this.currentAction(false)===false) {
+            this
+                .path.on('traversalComplete', function() {
+                    self.currentAction(false);
+                });
+            this
+                .path.on('stop', function() {
+                    self.currentAction(false);
+                });
+        }
+
+        this
+            .path.start()
+
     }
 });
 

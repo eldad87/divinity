@@ -35,49 +35,12 @@ var ServerNetworkEvents = {
 		}
 	},
 
-	_onPlayerStopMove: function (data, clientId) {
-        var playerEntity = ige.server.players[clientId];
+    _onAction: function (data, clientId) {
+        var actionName = data.pop(),
+            entityId = data.pop();
+        ige.$(entityId).action(actionName, data);
+    }
 
-        playerEntity
-            .path.clear()
-            .path.stop();
-    },
-
-	_onPlayerControlToTile: function (data, clientId) {
-		var playerEntity = ige.server.players[clientId],
-			newPath,
-			currentPosition = playerEntity._translate,
-			startTile;
-		
-		console.log('Path to: ', data);
-		
-		// Calculate the start tile from the current position by using the collision map
-		// as a tile map (any map will do with the same tileWidth and height).
-		//startTile = playerEntity._parent.pointToTile(currentPosition.toIso());
-        if (playerEntity._parent.isometricMounts()) {
-            startTile = playerEntity._parent.pointToTile(currentPosition.toIso());
-        } else {
-            startTile = playerEntity._parent.pointToTile(currentPosition);
-        }
-		
-		console.log('startTile', startTile);
-		
-		// Generate a path to the destination tile and then start movement
-		// along the path
-		newPath = ige.server.pathFinder.aStar(ige.$('DirtLayer'), startTile, new IgePoint(parseInt(data[0]), parseInt(data[1]), 0), function (tileData, tileX, tileY) {
-			// If the map tile data is set to 1, don't allow a path along it
-			//return tileData !== 1;
-            return !tileData;
-		}, true, true);
-		
-		//console.log(newPath);
-		
-		// Start movement along the new path
-        playerEntity
-            .path.clear()
-            .path.add(newPath)
-            .path.start();
-	}
 };
 
 if (typeof(module) !== 'undefined' && typeof(module.exports) !== 'undefined') { module.exports = ServerNetworkEvents; }

@@ -32,8 +32,8 @@ var Server = IgeClass.extend({
 					if (success) {
 
 						
+						ige.network.define('action', self._onAction);
 						ige.network.define('playerEntity', self._onPlayerEntity);
-						ige.network.define('playerControlToTile', self._onPlayerControlToTile);
 
 						ige.network.on('connect', self._onPlayerConnect); // Defined in ./gameClasses/ServerNetworkEvents.js
 						ige.network.on('disconnect', self._onPlayerDisconnect); // Defined in ./gameClasses/ServerNetworkEvents.js
