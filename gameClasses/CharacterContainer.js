@@ -8,11 +8,11 @@ var CharacterContainer = IgeEntityBox2d.extend({
 
         // Set bounding box
         self.box2dBody({
-            type: 'dynamic',
+            type: 'static',
             linearDamping: 0.0,
             angularDamping: 0.1,
             allowSleep: true,
-            bullet: true,
+            bullet: false,
             gravitic: true,
             fixedRotation: true,
             fixtures: [{
@@ -20,11 +20,7 @@ var CharacterContainer = IgeEntityBox2d.extend({
                 friction: 0.5,
                 restitution: 0.2,
                 shape: {
-                    type: 'rectangle',
-                    data: {
-                        width: 10,
-                        height: 10
-                    }
+                    type: 'rectangle'
                 }
             }]
         });
@@ -94,7 +90,7 @@ var CharacterContainer = IgeEntityBox2d.extend({
             // The section was not one that we handle here, so pass this
             // to the super-class streamSectionData() method - it handles
             // the "transform" section by itself
-            return IgeEntity.prototype.streamSectionData.call(this, sectionId, data);
+            return IgeEntityBox2d.prototype.streamSectionData.call(this, sectionId, data);
         }
     },
 
@@ -146,7 +142,7 @@ var CharacterContainer = IgeEntityBox2d.extend({
             }
         }
 
-        IgeEntity.prototype.update.call(this, ctx);
+        IgeEntityBox2d.prototype.update.call(this, ctx);
     }
 });
 
