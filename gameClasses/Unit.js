@@ -12,11 +12,11 @@ var Unit = CharacterContainer.extend({
     init: function (actions, armor, hp, mana, animationType) {
         CharacterContainer.prototype.init.call(this, animationType);
 
+        this.unitSettings(actions, armor, hp, mana);
         if(!ige.isServer) {
             this.renderHP();
         }
         this.addComponent(ControlComponent);
-        this.unitSettings(actions, armor, hp, mana);
         this.streamSections(['transform', 'direction', 'unit']);
     },
 
@@ -33,15 +33,14 @@ var Unit = CharacterContainer.extend({
             }
         }
         /* CEXCLUDE */
-
         this.setUnitSetting('healthPoints', 'current', hp);
         return this;
     },
 
     addMana: function(val) {
-        var hp = this.getUnitSetting('manaPoints', 'current');
-        hp += val;
-        this.setUnitSetting('manaPoints', 'current', hp);
+        var mana = this.getUnitSetting('manaPoints', 'current');
+        mana += val;
+        this.setUnitSetting('manaPoints', 'current', mana);
         return this;
     },
 
@@ -66,22 +65,21 @@ var Unit = CharacterContainer.extend({
     },
 
     renderHP: function() {
+        var self = this;
+
         // Define the player fuel bar
-        var hpSettings = this.getUnitSetting('healthPoints');
         new IgeUiProgressBar()
-            .id( this.id() + '_hp')
-            .bindData(hpSettings, 'current')
-            .max(hpSettings['max'])
+            .id( self.id() + '_hp')
+            .max(self.getUnitSetting('healthPoints').max)
             .min(0)
-            .top(-1 * this.size3d().y)
+            .bindData(self._unitSettings.healthPoints, 'current')
+            .top(-1 * self.size3d().y)
             .drawBounds(false)
             .drawBoundsData(false)
             .highlight(false)
-            .width(this.size3d().x * 2)
-            .height(3)
-            //.barBackColor('#00b343')
+            .width(self.size3d().x * 2)
+            .height(5)
             .barColor('#00b343')
-            //.barBorderColor(false)
             .mount(this);
     },
 
@@ -183,7 +181,7 @@ var Unit = CharacterContainer.extend({
         var targetEntity = ige.$(targetEntityId);
 
         //Check if done attacking
-        if(!targetEntity) {
+        if(!targetEntity || targetEntity.alive()===false) {
             this.currentAction(false);
             return true;
         } else if(this.currentAction()!='attack') {

@@ -8,7 +8,6 @@ var Client = IgeClass.extend({
 
         ige.showStats(1);
 
-
 		// Enabled texture smoothing when scaling textures
 		ige.globalSmoothing(true);
 

@@ -13,7 +13,7 @@ var ClientNetworkEvents = {
 	 * @private
 	 */
 	_onPlayerEntity: function (data) {
-        ige.log('Stream onPlayerEntity');
+        ige.log('Stream onPlayerEntity: ' + data);
 
 		if (ige.$(data)) {
 			// Set as owner
