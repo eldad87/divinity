@@ -106,9 +106,7 @@ var Unit = CharacterContainer.extend({
         }
         this.currentAction(actionName);
 
-        if(ige.isServer) {
-            this[actionName + 'Action'].apply(this, args);
-        }
+        this[actionName + 'Action'].apply(this, args);
 
         if(!ige.isServer) {
             args.push(this.id());
@@ -229,7 +227,7 @@ var Unit = CharacterContainer.extend({
                 this.moveAction(targetEntityPosition);
 
                 //Set repeater
-                this._actionRepeater(actionSetting.cooldown, 'attack', [targetEntity]);
+                this._actionRepeater(actionSetting.cooldown, 'attack', [targetEntityId]);
 
                 return true;
             } else {
@@ -244,7 +242,7 @@ var Unit = CharacterContainer.extend({
                     this.moveAction(targetEntityPosition);
 
                     //Set repeater
-                    this._actionRepeater(actionSetting.cooldown, 'attack', [targetEntity]);
+                    this._actionRepeater(actionSetting.cooldown, 'attack', [targetEntityId]);
 
                     return true;
                 }
@@ -264,7 +262,7 @@ var Unit = CharacterContainer.extend({
             //Cool down still active
 
             //Set repeater
-            this._actionRepeater( ((actionSetting['lastUsageTime'] + actionSetting.cooldown*1000) - currentTime) / 1000 , 'attack', [targetEntity]);
+            this._actionRepeater( ((actionSetting['lastUsageTime'] + actionSetting.cooldown*1000) - currentTime) / 1000 , 'attack', [targetEntityId]);
 
             return false;
         }
