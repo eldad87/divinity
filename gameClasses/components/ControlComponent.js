@@ -18,34 +18,11 @@ var ControlComponent = IgeClass.extend({
 		this._options = options;
 
         if (!ige.isServer) {
-            this.renderHP();
-
             this.enableMouseHandler();
         }
 	},
 
-    renderHP: function() {
-        // Define the player fuel bar
-        var hpSettings = this._entity.getUnitSetting('healthPoints');
-        new IgeUiProgressBar()
-            .id('player_fuelBar')
-            .bindData(hpSettings, 'current')
-            .max(hpSettings['max'])
-            .min(0)
-            .top(-1 * this._entity.size3d().y)
-            .drawBounds(false)
-            .drawBoundsData(false)
-            .highlight(false)
-            .width(this._entity.size3d().x * 2)
-            .height(3)
-            //.barBackColor('#00b343')
-            .barColor('#00b343')
-            //.barBorderColor(false)
-            .mount(this._entity);
-    },
-
     enableMouseHandler: function(){
-
         var overFunc = function(event) {
                 event.igeViewport.Command.entityOver(this);
             },

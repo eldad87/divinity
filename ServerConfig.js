@@ -7,6 +7,7 @@ var config = {
 		{name: 'PlayerComponent', path: './gameClasses/components/PlayerComponent'},
 		{name: 'CommandComponent', path: './gameClasses/components/CommandComponent'},
 		{name: 'ControlComponent', path: './gameClasses/components/ControlComponent'},
+        {name: 'ArmorAttackChart', path: './gameClasses/ArmorAttackChart'},
         {name: 'Unit', path: './gameClasses/Unit'},
         {name: 'Archer', path: './gameClasses/Units/Archer'},
         {name: 'Huntress', path: './gameClasses/Units/Huntress'},
