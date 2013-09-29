@@ -30,6 +30,8 @@ var CommandComponent = IgeEventingClass.extend({
 
         this._overEntity  = false;
         this._selectedEntities = [];
+
+        this._entity.addBehaviour('highlight_action_buttons_behaviour', this._highlightActionButtonsBehaviour);
 	},
 
 	/**
@@ -50,7 +52,7 @@ var CommandComponent = IgeEventingClass.extend({
                     // Listen for the mouse events we need to operate a mouse pan
                     this._entity.mouseDown(function (event) { self._mouseDown(event); });
                     this._entity.mouseUp(function (event) { self._mouseUp(event); });
-                    //this.drawUI();
+                    this.drawUI();
                 } else {
                     // Remove the zoom start data
                     delete this._mouseStart;
@@ -157,14 +159,9 @@ var CommandComponent = IgeEventingClass.extend({
             this._options.client.uiCommandBottom.actionGridButtons = {};
         } else {
             //Destroy current buttons
-            var button;
             if(this._options.client.uiCommandBottom.actionGridButtons) {
-                for(var i=1; i<=3; i++) {
-                    for(var u=1; u<=4; u++) {
-                        if(button = ige.$('uiCommandBottomActionGridButton' + i + 'x' + u)) {
-                            button.destroy();
-                        }
-                    }
+                for(var i in this._options.client.uiCommandBottom.actionGridButtons) {
+                    this._options.client.uiCommandBottom.actionGridButtons[i].destroy();
                 }
             }
         }
@@ -175,18 +172,9 @@ var CommandComponent = IgeEventingClass.extend({
         if(!selectedEntities) {
             return true;
         }
-        var sharedActions = [];
-        for(var i in selectedEntities) {
-            var actions = selectedEntities[i].getUnitSetting('actions')
-            for(var action in actions) {
-                if(sharedActions.indexOf(action)!=-1) {
-                    continue;
-                }
 
-                sharedActions.push(action);
-            }
-        }
-
+        //Get share actions
+        var sharedActions = this._getSharedActionsForEntitiers(selectedEntities);
 
         //Action grid buttons
         for(var i=1; i<=3; i++) {
@@ -197,10 +185,10 @@ var CommandComponent = IgeEventingClass.extend({
                     continue;
                 }
 
-                var actionName = sharedActions[actionNum].charAt(0).toUpperCase() + sharedActions[actionNum].slice(1); //moveStop -> MoveStop
+                var actionName = this._ucfirst(sharedActions[actionNum]); //sharedActions[actionNum].charAt(0).toUpperCase() + sharedActions[actionNum].slice(1); //moveStop -> MoveStop
 
                 this._options.client.uiCommandBottom.actionGridButtons[actionNum] = new IgeUiRadioButton()
-                    .id('uiCommandBottomActionGridButton' + i + 'x' + u)
+                    .id('uiCommandBottomActionGridButton' + actionName)
                     .radioGroup('uiCommandBottomActionGridButtons')
                     .drawBounds(false)
                     .drawBoundsData(false)
@@ -210,8 +198,43 @@ var CommandComponent = IgeEventingClass.extend({
         }
     },
 
+    _ucfirst: function(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1); //moveStop -> MoveStop
+    },
+
+    _getSharedActionsForEntitiers: function(entities) {
+        var allActions = {},
+            sharedActions = [],
+            actions,
+            action,
+            i;
+
+
+        //Get all actions, and count how many entities can do them
+        for(i in entities) {
+            actions = entities[i].getUnitSetting('actions');
+
+            for(action in actions) {
+                if(allActions[action]==undefined) {
+                    allActions[action] = 1;
+                } else {
+                    allActions[action]++;
+                }
+            }
+        }
+
+        //Go over all actions, get those that shared in all entities
+        for(action in allActions) {
+            if(allActions[action]==entities.length) {
+                sharedActions.push(action);
+            }
+        }
+
+        return sharedActions;
+    },
+
     /**
-     * Mouse ove an entity
+     * Mouse over an entity
      * @param val
      * @returns {*}
      */
@@ -396,6 +419,56 @@ var CommandComponent = IgeEventingClass.extend({
         //Set selected entities
         this.selectedEntities(filteredEntities);
     },
+
+    _highlightActionButtonsBehaviour: function () {
+        var selectedEntities = this.Command.selectedEntities(),
+            sharedActions = this.Command._getSharedActionsForEntitiers(selectedEntities),
+            tmpAction,
+            currentAction,
+            i;
+
+        //First dimm all buttons
+        for(var i in this.Command._options.client.uiCommandBottom.actionGridButtons) {
+            this.Command._options.client.uiCommandBottom.actionGridButtons[i].backgroundColor('');
+        }
+
+
+        for(var i in selectedEntities) {
+            tmpAction = selectedEntities[i].currentAction();
+            if(!tmpAction) {
+                return false; //1 of the units is doing nothing
+            }
+
+            if(currentAction==undefined) {
+                currentAction = tmpAction;
+            }
+
+            if(sharedActions.indexOf(tmpAction)==-1) {
+                return false; //Not shared action
+            }
+
+            if(currentAction!=tmpAction) {
+                return false; //Units are doing more then 1 action
+            }
+        }
+
+        //Highlight button actions
+        for(i in sharedActions) {
+            var actionName = this.Command._ucfirst(sharedActions[i]);
+
+            //Highlight
+            if(sharedActions[i]==currentAction) {
+                ige.log('highlight: uiCommandBottomActionGridButton' + actionName);
+                ige.$('uiCommandBottomActionGridButton' + actionName).backgroundColor('#6b6b6b');
+
+            }
+        }
+
+        //TODO: if action have a cool down,
+
+
+    },
+
 
     /**
      * Return all entities in objectLayer that located inside the given rect

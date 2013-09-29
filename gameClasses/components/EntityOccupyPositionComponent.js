@@ -34,7 +34,7 @@ var EntityOccupyPositionComponent = IgeEventingClass.extend({
 
 
             if (this._enabled) {
-                this._entity.addBehaviour('occupy_position_behaviour', this._behaviour);
+                this._entity.addBehaviour('occupy_position_behaviour', this._behaviour, true);
             } else {
                 this._entity.removeBehaviour('occupy_position_behaviour');
             }
