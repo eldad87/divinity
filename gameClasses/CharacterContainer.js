@@ -8,19 +8,19 @@ var CharacterContainer = IgeEntityBox2d.extend({
 
         // Set bounding box
         self.box2dBody({
-            type: 'static',
+            type: 'dynamic',
             linearDamping: 0.0,
             angularDamping: 0.1,
             allowSleep: true,
             bullet: false,
             gravitic: true,
-            fixedRotation: true,
+            fixedRotation: false,
             fixtures: [{
                 density: 1.0,
                 friction: 0.5,
                 restitution: 0.2,
                 shape: {
-                    type: 'rectangle'
+                    type: 'circle'
                 }
             }]
         });
@@ -33,15 +33,12 @@ var CharacterContainer = IgeEntityBox2d.extend({
             self.addComponent(EntityOccupyPositionComponent)
                 .occupyPosition.enabled(true);
 
-
             // Create a character entity as a child of this container
             self.character = new Character(animationType)
                 .id(self.id() + '_character')
                 .drawBounds(false)
                 .originTo(0.5, 0.6, 0.5)
                 .mount(self);
-
-            //this.overTilesGeometry = false;
 
             // Check if the objectLayer is is iso mode
             if (ige.$('objectLayer').isometricMounts()) {

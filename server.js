@@ -12,15 +12,15 @@ var Server = IgeClass.extend({
 		// Define an array to hold our tile data
 		this.tileData = [];
 
+        // Add the server-side game methods / event handlers
+        this.implement(ServerNetworkEvents);
+
         // Add physics and setup physics world
         ige.addComponent(IgeBox2dComponent)
             .box2d.sleep(true)
             .box2d.gravity(0, 0)
             .box2d.createWorld()
             .box2d.start();
-
-		// Add the server-side game methods / event handlers
-		this.implement(ServerNetworkEvents);
 
 		// Add the networking component
 		ige.addComponent(IgeNetIoComponent)

@@ -50,7 +50,7 @@ var CommandComponent = IgeEventingClass.extend({
                     // Listen for the mouse events we need to operate a mouse pan
                     this._entity.mouseDown(function (event) { self._mouseDown(event); });
                     this._entity.mouseUp(function (event) { self._mouseUp(event); });
-                    this.drawUI();
+                    //this.drawUI();
                 } else {
                     // Remove the zoom start data
                     delete this._mouseStart;
@@ -219,7 +219,12 @@ var CommandComponent = IgeEventingClass.extend({
         if (val !== undefined) {
             this._overEntity = val;
 
-            ige.log('Entity over ' + val);
+            if(val) {
+                ige.log('Entity over ' + val.id());
+            } else {
+                ige.log('Entity out');
+            }
+
             return this._entity;
         }
 
@@ -334,7 +339,7 @@ var CommandComponent = IgeEventingClass.extend({
                     }
 
                     for(var i in selectedEntities) {
-                        selectedEntities[i].action('attack', [overEntity])
+                        selectedEntities[i].action('attack', [overEntity.id()])
                     }
 
                     break;

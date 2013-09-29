@@ -1,10 +1,10 @@
 // Define our player character classes
-var Character = IgeEntityBox2d.extend({
+var Character = IgeEntity.extend({
 	classId: 'Character',
 
 	init: function (animationType) {
 		var self = this;
-        IgeEntityBox2d.prototype.init.call(this);
+        IgeEntity.prototype.init.call(this);
 
 		// Setup the entity
 		self.addComponent(IgeAnimationComponent)
