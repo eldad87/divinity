@@ -40,7 +40,7 @@ var Server = IgeClass.extend({
 
 						// Add the network stream component
 						ige.network.addComponent(IgeStreamComponent)
-							.stream.sendInterval(30) // Send a stream update once every 30 milliseconds
+							.stream.sendInterval(160) // Send a stream update once every 30 milliseconds
 							.stream.start(); // Start the stream
 
 						// Accept incoming network connections

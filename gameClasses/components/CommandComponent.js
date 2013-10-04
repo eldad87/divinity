@@ -458,9 +458,8 @@ var CommandComponent = IgeEventingClass.extend({
 
             //Highlight
             if(sharedActions[i]==currentAction) {
-                ige.log('highlight: uiCommandBottomActionGridButton' + actionName);
+                //ige.log('highlight: uiCommandBottomActionGridButton' + actionName);
                 ige.$('uiCommandBottomActionGridButton' + actionName).backgroundColor('#6b6b6b');
-
             }
         }
 

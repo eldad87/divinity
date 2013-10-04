@@ -14,6 +14,8 @@ var igeClientConfig = {
         './gameClasses/Units/Archer.js',
         './gameClasses/Units/Huntress.js',
 
+        './gameClasses/ui/EntityUiProgressBar.js',
+
 
 
         './gameClasses/components/ControlComponent.js',

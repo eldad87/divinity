@@ -1,17 +1,11 @@
 var Unit = CharacterContainer.extend({
     classId: 'Unit',
-    _currentAction: false,
-    _actionRepeaterUUID: false,
-    _unitSettings: {
-        actions:        {},
-        armor:          {type: 'none', amount: 0},
-        healthPoints:   {max: 0.0, current: 0.0},
-        manaPoints:     {max: 0.0, current: 0.0}
-    },
 
     init: function (actions, armor, hp, mana, animationType) {
         CharacterContainer.prototype.init.call(this, animationType);
 
+        this._currentAction = false;
+        this._actionRepeaterUUID = false;
         this.unitSettings(actions, armor, hp, mana);
         if(!ige.isServer) {
             this.renderHP();
@@ -24,15 +18,19 @@ var Unit = CharacterContainer.extend({
         var hp = this.getUnitSetting('healthPoints', 'current');
         hp += val;
 
-        ige.log('addHP: ' + val + ', ' + hp);
-        /* CEXCLUDE */
-        if(ige.isServer) {
-            if(hp<=0) {
-                //Only the server can kill a unit
-                this.destroy();
+        if(hp<=0) {
+            /* CEXCLUDE */
+            if(ige.isServer) {
+                    //Only the server can kill a unit
+                    this.destroy();
+            }
+            /* CEXCLUDE */
+
+            if(!ige.isServer) {
+                hp = 1;
             }
         }
-        /* CEXCLUDE */
+
         this.setUnitSetting('healthPoints', 'current', hp);
         return this;
     },
@@ -40,39 +38,47 @@ var Unit = CharacterContainer.extend({
     addMana: function(val) {
         var mana = this.getUnitSetting('manaPoints', 'current');
         mana += val;
+
         this.setUnitSetting('manaPoints', 'current', mana);
         return this;
     },
 
     streamSectionData: function (sectionId, data) {
-        if (sectionId !== 'unit') {
+        // Check if the section is one that we are handling
+        if (sectionId === 'unit') {
+            // Check if the server sent us data, if not we are supposed
+            // to return the data instead of set it
+            if (!ige.isServer) {
+                if (data) {
+                    // We have been given new data!
+                    data = JSON.parse(data);
+                    this.unitSettings(data.actions, data.armor, data.healthPoints, data.manaPoints);
+                }
+            }
+            /* CEXCLUDE */
+            if (ige.isServer) {
+                // Return current data
+                return JSON.stringify(this.unitSettings());
+            }
+            /* CEXCLUDE */
+        } else {
+            // The section was not one that we handle here, so pass this
+            // to the super-class streamSectionData() method - it handles
+            // the "transform" section by itself
             return CharacterContainer.prototype.streamSectionData.call(this, sectionId, data);
         }
-
-        if (!ige.isServer) {
-            if (data) {
-                // We have been given new data!
-                this.unitSettings(data.actions, data.armor, data.healthPoints, data.manaPoints);
-            }
-        }
-
-        /* CEXCLUDE */
-        if (ige.isServer) {
-            // Return current data
-            return this.unitSettings();
-        }
-        /* CEXCLUDE */
     },
 
     renderHP: function() {
         var self = this;
 
         // Define the player fuel bar
-        new IgeUiProgressBar()
+        new EntityUiProgressBar()
             .id( self.id() + '_hp')
             .max(self.getUnitSetting('healthPoints').max)
             .min(0)
-            .bindData(self._unitSettings.healthPoints, 'current')
+            .bindMethod(self, self.getUnitSetting ,['healthPoints', 'current'])
+            //.bindData(self, 'currentHP')
             .top(-1 * self.size3d().y)
             .drawBounds(false)
             .drawBoundsData(false)
@@ -163,6 +169,7 @@ var Unit = CharacterContainer.extend({
         if (    actions !== undefined   && armor   !== undefined   &&
                 hp      != undefined  && mana    !== undefined )
         {
+            this._unitSettings = {};
             this._unitSettings.actions       = actions;
             this._unitSettings.armor         = armor;
             this._unitSettings.healthPoints  = hp;
