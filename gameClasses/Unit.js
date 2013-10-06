@@ -215,7 +215,7 @@ var Unit = CharacterContainer.extend({
             attackRange     = actionSetting.range+ 1,
             isTargetInRange = attackRange>=distance,
             moveableUnit    = this.getUnitSetting('actions' ,'move') ? true : false,
-            movementEndPoing;
+            movementEndPoint;
 
 
         if(!isTargetInRange && !moveableUnit) {
@@ -224,10 +224,10 @@ var Unit = CharacterContainer.extend({
         }
 
         if(!isTargetInRange) {
-            movementEndPoing = this.path.endPoint();
+            movementEndPoint = this.path.endPoint();
 
             //Before moving, check if we already on the move
-            if(movementEndPoing==null) {
+            if(movementEndPoint==null) {
                 //Unit ISN'T MOVING, get closer to the target
                 this.moveAction(targetEntityPosition);
 
@@ -237,20 +237,16 @@ var Unit = CharacterContainer.extend({
                 return true;
             } else {
                 //Units IS MOVING, check the distance between the final-destination and the target
-                if (this._parent.isometricMounts()) {
-                    movementEndPoing = this._parent.pointToTile(movementEndPoing.toIso());
-                }
-
-                distance = Math.distance(movementEndPoing.x, movementEndPoing.y, targetEntityPosition.x, targetEntityPosition.y);
+                distance = Math.distance(movementEndPoint.x, movementEndPoint.y, targetEntityPosition.x, targetEntityPosition.y);
                 if(attackRange<distance) {
+
                     //Destination is wrong, re-calc it
                     this.moveAction(targetEntityPosition);
-
-                    //Set repeater
-                    this._actionRepeater(actionSetting.cooldown, 'attack', [targetEntityId]);
-
-                    return true;
                 }
+
+                //Set repeater
+                this._actionRepeater(actionSetting.cooldown, 'attack', [targetEntityId]);
+                return true;
             }
         }
 
@@ -288,8 +284,20 @@ var Unit = CharacterContainer.extend({
         return this;
     },
 
+    tick: function (ctx) {
+        if(this.repearAction && this.currentAction()==this.repearAction) {
+            this.action(this.repearAction, this.repearArgs);
+        }
+
+        CharacterContainer.prototype.tick.call(this, ctx);
+    },
+
     _actionRepeater: function(timeInterval, actionName, args) {
-        var self = this,
+        this.repearAction = actionName;
+        this.repearArgs = args;
+
+
+        /*var self = this,
             id = ige.newId();
         this._actionRepeaterUUID = id;
 
@@ -299,7 +307,9 @@ var Unit = CharacterContainer.extend({
             }
 
             self.action(actionName, args);
-        }, timeInterval*1000);
+        },
+            timeInterval*1000
+        );*/
     },
 
     _caldFinalDmg: function(attack, armor) {
@@ -335,7 +345,7 @@ var Unit = CharacterContainer.extend({
      * @param endTile
      * @private
      */
-    moveAction: function (endTile) {
+    moveAction: function (endTile, onEvent, onEventCallback) {
         // Get the tile co-ordinates that the mouse is currently over
         var currentPosition = this._translate,
             startTile,
@@ -388,6 +398,11 @@ var Unit = CharacterContainer.extend({
                 .path.on('stop', function() {
                     self.currentAction(false);
                 });
+        }
+
+        if(onEvent && onEventCallback) {
+            this
+                .path.on(onEvent, onEventCallback, this);
         }
 
         this
